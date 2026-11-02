@@ -50,7 +50,8 @@ def run_scenario(config: RunConfig, llm: LLM, scenario: Scenario) -> dict:
     memory.store.close()
     main = answers[0]
     return {
-        "id": scenario.id, "kind": scenario.kind, "answers": answers,
+        "id": scenario.id, "kind": scenario.kind, "current": scenario.current, "old": scenario.old,
+        "answers": answers,
         "correct": main["correct"], "stale": main["stale"], "hedged": main["hedged"],
         "retention": main["retention"], "consistent": answers[0]["verdict"] == answers[1]["verdict"],
         "writes": len(writes), "write_llm_calls": sum(op.llm_calls for op in writes),
