@@ -17,6 +17,7 @@ TOOL_SPECS = [
                 "properties": {
                     "turn": {"type": "string", "description": "The turn text, with speaker."},
                     "time": {"type": "string", "description": "When the turn happened."},
+                    "speaker": {"type": "string", "description": "Who said the turn (optional)."},
                 },
                 "required": ["turn", "time"],
             },
@@ -71,8 +72,8 @@ class MemoryTools:
     def __init__(self, memory: MemorySystem):
         self.memory = memory
 
-    def write_memory(self, turn: str, time: str) -> dict:
-        return {"note_id": self.memory.write(turn, time)}
+    def write_memory(self, turn: str, time: str, speaker: Optional[str] = None) -> dict:
+        return {"note_id": self.memory.write(turn, time, speaker=speaker)}
 
     def search_memory(self, query: str, k: int = 10) -> dict:
         return self.memory.search(query, k)

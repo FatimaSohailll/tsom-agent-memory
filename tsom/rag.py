@@ -30,7 +30,8 @@ class RagMemory:
 
     # ---- write path ----
 
-    def write(self, content: str, time_str: str) -> str:
+    def write(self, content: str, time_str: str, speaker: Optional[str] = None) -> str:
+        # speaker is accepted for interface compatibility; RAG keeps no facts.
         start = time.perf_counter()
         note = Note(content=content, timestamp=time_str)
         self.retriever.add_documents([content])

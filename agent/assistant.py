@@ -28,7 +28,7 @@ class Assistant:
     def observe(self, speaker: str, text: str, time_str: str) -> str:
         # Same turn format A-Mem stores.
         turn = "Speaker " + speaker + "says : " + text
-        return self.tools.call("write_memory", turn=turn, time=time_str)["note_id"]
+        return self.tools.call("write_memory", turn=turn, time=time_str, speaker=speaker)["note_id"]
 
     def answer(self, question: str, category: int, gold: str) -> dict:
         before = self.llm.usage.snapshot()
