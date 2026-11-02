@@ -1,8 +1,9 @@
 """The memory module: A-Mem notes plus our fact layer, behind one class.
 
 Phase 1 runs A-Mem unchanged (system="amem") and records cost and latency
-for every operation. The fact layer, classifier, gate and validity steps
-(system="tsom") have their interfaces here and are filled in during Phase 2.
+for every operation. With system="tsom" every write also runs the fact layer
+(tsom/facts.py); use_classifier picks its label mode. The gate (Gap 2) is
+not implemented yet, so use_gate=True raises.
 """
 
 from __future__ import annotations
@@ -11,7 +12,8 @@ import time
 from typing import List, Optional
 
 from .amem_bridge import RobustAgenticMemorySystem
-from .contracts import Fact, MemoryOp, Note, RunConfig
+from .contracts import Fact, FactOp, MemoryOp, Note, RunConfig
+from .facts import FactLayer
 from .llm import LLM
 from .store import Store
 
@@ -19,8 +21,8 @@ from .store import Store
 class MemorySystem:
     def __init__(self, config: RunConfig, llm: LLM, db_path: str = ":memory:",
                  sample_id: Optional[str] = None):
-        if config.system == "tsom" and (config.use_classifier or config.use_gate or config.use_validity):
-            raise NotImplementedError("classifier, gate and validity are Phase 2 work")
+        if config.system == "tsom" and config.use_gate:
+            raise NotImplementedError("the gate (Gap 2) is not implemented yet")
         self.config = config
         self.llm = llm
         self.sample_id = sample_id
@@ -30,34 +32,40 @@ class MemorySystem:
         self.amem = RobustAgenticMemorySystem(model_name=config.embedder, llm_backend="ollama",
                                               llm_model=config.model)
         self.amem.llm_controller.llm = llm
+        self.facts = FactLayer(self.store, llm, config.use_classifier) if config.system == "tsom" else None
 
     # ---- write path ----
 
-    def write(self, content: str, time_str: str) -> str:
-        before = self.llm.usage.snapshot()
+    def write(self, content: str, time_str: str, speaker: Optional[str] = None) -> str:
+        before = self.llm.usage.snapshot()  # before extraction, so it counts in this write
         evo_before = self.amem.evo_cnt
         start = time.perf_counter()
+        fact_ops: List[FactOp] = []
+        failures_before = self.facts.parse_failures if self.facts else 0
+        if self.facts is not None and speaker is not None:
+            fact_ops = self.facts.process_turn(speaker, self._turn_text(content, speaker), time_str)
         note_id = self.amem.add_note(content, time=time_str)
+        new_ids = [op.fact_id for op in fact_ops if op.fact_id]
+        self.store.set_source_note(new_ids, note_id)
         latency = time.perf_counter() - start
         used = self.llm.usage.since(before)
         self._sync_note(note_id)
         self.store.log_op(MemoryOp(
             op_type="write", system=self.config.system, sample_id=self.sample_id,
-            ids_touched=[note_id], llm_calls=used.calls, prompt_tokens=used.prompt_tokens,
+            ids_touched=[note_id] + new_ids + [op.retired_id for op in fact_ops if op.retired_id],
+            llm_calls=used.calls, prompt_tokens=used.prompt_tokens,
             completion_tokens=used.completion_tokens, latency_s=latency,
             evolved=self.amem.evo_cnt > evo_before,
+            labels=[op.label for op in fact_ops], raw_labels=[op.raw_label for op in fact_ops],
+            parse_failures=(self.facts.parse_failures - failures_before) if self.facts else 0,
         ))
         return note_id
 
-    # Phase 2 hooks. Each one is a single, separately switchable step.
-
-    def extract_facts(self, note: Note) -> List[Fact]:
-        """Turn a note into typed facts against tsom.schema.PREDICATES."""
-        raise NotImplementedError("Phase 2")
-
-    def classify(self, fact: Fact) -> str:
-        """Gap 1: label a fact additive, corrective, contradictory or redundant."""
-        raise NotImplementedError("Phase 2")
+    @staticmethod
+    def _turn_text(content: str, speaker: str) -> str:
+        """Undo Assistant.observe's prefix exactly; text without it is used as is."""
+        prefix = "Speaker " + speaker + "says : "
+        return content[len(prefix):] if content.startswith(prefix) else content
 
     def gate(self, labels: List[str], neighbour_similarity: float) -> bool:
         """Gap 2: True means run A-Mem evolution for this write."""

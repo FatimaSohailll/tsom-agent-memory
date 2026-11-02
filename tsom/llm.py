@@ -100,6 +100,8 @@ def fake_completion(prompt: str) -> str:
     runs without a model. Its answers are meaningless; only the plumbing is tested.
     """
     h = int(hashlib.md5(prompt.encode()).hexdigest(), 16)
+    if prompt.startswith("You extract facts about one speaker"):
+        return "NONE"
     if prompt.startswith("You are an AI memory evolution agent"):
         decision = ["NO_EVOLUTION", "STRENGTHEN", "UPDATE_NEIGHBOR", "STRENGTHEN_AND_UPDATE"][h % 4]
         return f"DECISION: {decision}\nREASON: fake"
