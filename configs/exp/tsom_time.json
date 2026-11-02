@@ -1,0 +1,10 @@
+{
+  "run_name": "tsom_time",
+  "system": "tsom",
+  "use_classifier": false,
+  "use_validity": true,
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "retrieve_k": 10,
+  "use_gate": false
+}
