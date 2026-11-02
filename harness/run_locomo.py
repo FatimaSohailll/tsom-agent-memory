@@ -23,9 +23,8 @@ from agent.assistant import Assistant
 from harness.metrics import bleu1, f1, summarise
 from tsom.amem_bridge import load_locomo_dataset
 from tsom.contracts import RunConfig
+from tsom.factory import build_memory
 from tsom.llm import LLM
-from tsom.memory import MemorySystem
-from tsom.rag import RagMemory
 from tsom.tools import MemoryTools
 
 log = logging.getLogger("harness")
@@ -76,8 +75,7 @@ def run(config: RunConfig) -> dict:
 def run_sample(config: RunConfig, llm: LLM, idx: int, sample, out: Path):
     db = out / f"memory_sample_{idx}.sqlite"
     db.unlink(missing_ok=True)
-    memory_cls = RagMemory if config.system == "rag" else MemorySystem
-    memory = memory_cls(config, llm, db_path=str(db), sample_id=str(idx))
+    memory = build_memory(config, llm, db_path=str(db), sample_id=str(idx))
     agent = Assistant(MemoryTools(memory), llm, config.retrieve_k, config.temperature_c5,
                       seed=config.seed + idx)
 
@@ -150,11 +148,16 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     logging.getLogger("amem_robust").setLevel(logging.WARNING)
 
-    data = json.loads(Path(args.config).read_text())
-    for item in args.set:
+    run(load_config(args.config, args.set))
+
+
+def load_config(path: str, overrides=()) -> RunConfig:
+    """Read a config file and apply --set key=value overrides."""
+    data = json.loads(Path(path).read_text())
+    for item in overrides:
         key, value = item.split("=", 1)
         data[key] = json.loads(value) if value.replace(".", "", 1).isdigit() or value in ("true", "false", "null") else value
-    run(RunConfig(**data))
+    return RunConfig(**data)
 
 
 if __name__ == "__main__":

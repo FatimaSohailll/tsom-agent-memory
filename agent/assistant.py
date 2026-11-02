@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import random
 import time
+from typing import Optional
 
 from tsom.amem_bridge import parse_keywords_response, parse_plain_text_answer
 from tsom.contracts import MemoryOp
@@ -30,13 +31,16 @@ class Assistant:
         turn = "Speaker " + speaker + "says : " + text
         return self.tools.call("write_memory", turn=turn, time=time_str, speaker=speaker)["note_id"]
 
-    def answer(self, question: str, category: int, gold: str) -> dict:
+    def answer(self, question: str, category: int, gold: str,
+               temperature_override: Optional[float] = None) -> dict:
         before = self.llm.usage.snapshot()
         start = time.perf_counter()
         keywords = self._query_keywords(question)
         context = self.tools.call("search_memory", query=keywords, k=self.retrieve_k,
                                   question=question)["notes"]
         prompt, temperature = self._answer_prompt(question, category, gold, context)
+        if temperature_override is not None:
+            temperature = temperature_override
         try:
             raw = self.llm.get_completion(prompt, temperature=temperature)
         except Exception:
