@@ -34,7 +34,8 @@ class Assistant:
         before = self.llm.usage.snapshot()
         start = time.perf_counter()
         keywords = self._query_keywords(question)
-        context = self.tools.call("search_memory", query=keywords, k=self.retrieve_k)["notes"]
+        context = self.tools.call("search_memory", query=keywords, k=self.retrieve_k,
+                                  question=question)["notes"]
         prompt, temperature = self._answer_prompt(question, category, gold, context)
         try:
             raw = self.llm.get_completion(prompt, temperature=temperature)

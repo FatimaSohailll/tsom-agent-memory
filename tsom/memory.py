@@ -2,8 +2,9 @@
 
 Phase 1 runs A-Mem unchanged (system="amem") and records cost and latency
 for every operation. With system="tsom" every write also runs the fact layer
-(tsom/facts.py); use_classifier picks its label mode. The gate (Gap 2) is
-not implemented yet, so use_gate=True raises.
+(tsom/facts.py); use_classifier picks its label mode. use_validity adds current
+facts and OUTDATED markers to the retrieved context (tsom/context.py). The
+gate (Gap 2) is not implemented yet, so use_gate=True raises.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import time
 from typing import List, Optional
 
 from .amem_bridge import RobustAgenticMemorySystem
+from .context import fact_context, render, retrieve_blocks
 from .contracts import Fact, FactOp, MemoryOp, Note, RunConfig
 from .facts import FactLayer
 from .llm import LLM
@@ -74,12 +76,22 @@ class MemorySystem:
 
     # ---- read path ----
 
-    def search(self, query: str, k: int) -> dict:
+    def search(self, query: str, k: int, question: Optional[str] = None) -> dict:
+        """Retrieve with A-Mem using query. question (if given) is only used to
+        find people mentioned by name for the fact block."""
         start = time.perf_counter()
-        context = self.amem.find_related_memories_raw(query, k=k)
+        facts: object = []
+        if self.facts is None:
+            context = self.amem.find_related_memories_raw(query, k=k)
+        else:
+            blocks = retrieve_blocks(self.amem, query, k)
+            ctx = fact_context(self.store, [nid for nid, _ in blocks], question or query)
+            facts = {"current": ctx["current"],
+                     "outdated": [m for ms in ctx["outdated"].values() for m in ms]}
+            context = render(blocks, ctx) if self.config.use_validity else "".join(t for _, t in blocks)
         self.store.log_op(MemoryOp(op_type="search", system=self.config.system,
                                    sample_id=self.sample_id, latency_s=time.perf_counter() - start))
-        return {"notes": context, "facts": []}  # facts filled once the fact layer exists
+        return {"notes": context, "facts": facts}
 
     def fact_history(self, entity: str, predicate: Optional[str] = None) -> List[Fact]:
         self.store.log_op(MemoryOp(op_type="fact_history", system=self.config.system,

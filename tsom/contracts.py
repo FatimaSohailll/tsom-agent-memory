@@ -11,7 +11,7 @@ import time
 import uuid
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 def new_id() -> str:
@@ -99,6 +99,13 @@ class RunConfig(BaseModel):
     max_sessions: Optional[int] = None  # None = every session
     max_questions: Optional[int] = None  # per conversation; None = all
     output_dir: str = "results"
+
+    @model_validator(mode="after")
+    def _baselines_have_no_fact_layer(self):
+        if self.system in ("amem", "rag") and (self.use_classifier or self.use_validity):
+            raise ValueError(f'use_classifier and use_validity need system="tsom"; '
+                             f'system="{self.system}" is a baseline and has no fact layer')
+        return self
 
 
 if __name__ == "__main__":

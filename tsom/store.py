@@ -106,6 +106,21 @@ class Store:
         sql += " ORDER BY rowid"
         return [Fact(**dict(r)) for r in self.conn.execute(sql, args)]
 
+    def facts_of(self, subjects: List[str]) -> List[Fact]:
+        """Every fact for these subjects, any status, in insertion order."""
+        if not subjects:
+            return []
+        marks = ",".join("?" * len(subjects))
+        return [Fact(**dict(r)) for r in self.conn.execute(
+            f"SELECT * FROM facts WHERE subject IN ({marks}) ORDER BY rowid", subjects)]
+
+    def facts_by_source(self, note_ids: List[str]) -> List[Fact]:
+        if not note_ids:
+            return []
+        marks = ",".join("?" * len(note_ids))
+        return [Fact(**dict(r)) for r in self.conn.execute(
+            f"SELECT * FROM facts WHERE source_note_id IN ({marks}) ORDER BY rowid", note_ids)]
+
     def supersede(self, old_id: str, new_fact: Fact):
         """Retire an old fact and store the one that replaces it. Nothing is deleted."""
         self.conn.execute(

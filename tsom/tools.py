@@ -33,6 +33,8 @@ TOOL_SPECS = [
                 "properties": {
                     "query": {"type": "string"},
                     "k": {"type": "integer", "default": 10},
+                    "question": {"type": "string",
+                                 "description": "The original question, used to spot people it names (optional)."},
                 },
                 "required": ["query"],
             },
@@ -75,8 +77,8 @@ class MemoryTools:
     def write_memory(self, turn: str, time: str, speaker: Optional[str] = None) -> dict:
         return {"note_id": self.memory.write(turn, time, speaker=speaker)}
 
-    def search_memory(self, query: str, k: int = 10) -> dict:
-        return self.memory.search(query, k)
+    def search_memory(self, query: str, k: int = 10, question: Optional[str] = None) -> dict:
+        return self.memory.search(query, k, question=question)
 
     def get_fact_history(self, entity: str, predicate: Optional[str] = None) -> dict:
         return {"facts": [f.model_dump() for f in self.memory.fact_history(entity, predicate)]}

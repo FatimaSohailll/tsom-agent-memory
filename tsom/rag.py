@@ -46,7 +46,7 @@ class RagMemory:
 
     # ---- read path ----
 
-    def search(self, query: str, k: int) -> dict:
+    def search(self, query: str, k: int, question: Optional[str] = None) -> dict:
         start = time.perf_counter()
         context = ""
         if self.notes:
