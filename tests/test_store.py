@@ -41,3 +41,44 @@ def test_op_log():
     store.log_op(MemoryOp(op_type="write", system="amem", llm_calls=3, latency_s=1.5))
     ops = store.ops()
     assert len(ops) == 1 and ops[0].llm_calls == 3
+
+
+def test_conflict_with_round_trip():
+    store = Store()
+    old = Fact(subject="ali", predicate="lives_in", object="Karachi", valid_from="2023-01-01")
+    new = Fact(subject="ali", predicate="lives_in", object="Lahore", valid_from="2023-05-01",
+               conflict_with=old.id)
+    store.add_fact(old)
+    store.add_fact(new)
+    assert store.get_fact(new.id) == new
+    assert {f.object for f in store.active_facts("ali", "lives_in")} == {"Karachi", "Lahore"}
+
+
+def test_subject_lookups_ignore_case():
+    store = Store()
+    store.add_fact(Fact(subject="Ali", predicate="likes", object="biryani", valid_from="d1"))
+    store.add_fact(Fact(subject="ali", predicate="likes", object="nihari", valid_from="d2"))
+    assert [f.object for f in store.active_facts("ALI")] == ["biryani", "nihari"]
+    assert [f.object for f in store.fact_history("ali", "likes")] == ["biryani", "nihari"]
+    assert store.active_facts("Ali")[0].subject == "Ali"  # stored as given
+    assert len(store.subjects()) == 1
+
+
+def test_history_uses_insertion_order_not_date_strings():
+    store = Store()
+    # As text, "9 May" sorts after "10 June"; insertion order must win.
+    old = Fact(subject="ali", predicate="lives_in", object="Karachi", valid_from="9 May, 2023")
+    store.add_fact(old)
+    store.supersede(old.id, Fact(subject="ali", predicate="lives_in", object="Lahore",
+                                 valid_from="10 June, 2023"))
+    assert [f.object for f in store.fact_history("ali")] == ["Karachi", "Lahore"]
+
+
+def test_retire_and_set_source_note():
+    store = Store()
+    fact = Fact(subject="ali", predicate="likes", object="tea", valid_from="d1")
+    store.add_fact(fact)
+    store.set_source_note([fact.id], "note1")
+    store.retire(fact.id, "d2")
+    got = store.get_fact(fact.id)
+    assert got.status == "retired" and got.valid_to == "d2" and got.source_note_id == "note1"

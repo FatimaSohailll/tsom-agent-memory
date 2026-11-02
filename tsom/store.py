@@ -20,14 +20,15 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 CREATE TABLE IF NOT EXISTS facts (
     id TEXT PRIMARY KEY,
-    subject TEXT NOT NULL,
+    subject TEXT NOT NULL COLLATE NOCASE,
     predicate TEXT NOT NULL,
     object TEXT NOT NULL,
     valid_from TEXT NOT NULL,
     valid_to TEXT,
     supersedes TEXT,
     source_note_id TEXT,
-    status TEXT NOT NULL
+    status TEXT NOT NULL,
+    conflict_with TEXT
 );
 CREATE INDEX IF NOT EXISTS facts_sp ON facts (subject, predicate);
 CREATE TABLE IF NOT EXISTS ops (
@@ -73,14 +74,18 @@ class Store:
 
     def add_fact(self, fact: Fact):
         self.conn.execute(
-            "INSERT INTO facts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO facts VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (fact.id, fact.subject, fact.predicate, fact.object, fact.valid_from,
-             fact.valid_to, fact.supersedes, fact.source_note_id, fact.status),
+             fact.valid_to, fact.supersedes, fact.source_note_id, fact.status,
+             fact.conflict_with),
         )
 
     def get_fact(self, fact_id: str) -> Optional[Fact]:
         row = self.conn.execute("SELECT * FROM facts WHERE id = ?", (fact_id,)).fetchone()
         return Fact(**dict(row)) if row else None
+
+    # Subjects compare case-insensitively (COLLATE NOCASE) but are stored as given.
+    # Facts come back in insertion order (rowid).
 
     def active_facts(self, subject: str, predicate: Optional[str] = None) -> List[Fact]:
         sql = "SELECT * FROM facts WHERE subject = ? AND status = 'active'"
@@ -88,16 +93,17 @@ class Store:
         if predicate:
             sql += " AND predicate = ?"
             args.append(predicate)
+        sql += " ORDER BY rowid"
         return [Fact(**dict(r)) for r in self.conn.execute(sql, args)]
 
     def fact_history(self, subject: str, predicate: Optional[str] = None) -> List[Fact]:
-        """Every fact for a subject, current and retired, oldest first."""
+        """Every fact for a subject, current and retired, in insertion order."""
         sql = "SELECT * FROM facts WHERE subject = ?"
         args = [subject]
         if predicate:
             sql += " AND predicate = ?"
             args.append(predicate)
-        sql += " ORDER BY valid_from"
+        sql += " ORDER BY rowid"
         return [Fact(**dict(r)) for r in self.conn.execute(sql, args)]
 
     def supersede(self, old_id: str, new_fact: Fact):
@@ -108,6 +114,17 @@ class Store:
         )
         new_fact.supersedes = old_id
         self.add_fact(new_fact)
+
+    def retire(self, fact_id: str, valid_to: str):
+        """Retire a fact without a replacement (e.g. "I no longer like tea"). Nothing is deleted."""
+        self.conn.execute(
+            "UPDATE facts SET status = 'retired', valid_to = ? WHERE id = ?", (valid_to, fact_id),
+        )
+
+    def set_source_note(self, fact_ids: List[str], note_id: str):
+        self.conn.executemany(
+            "UPDATE facts SET source_note_id = ? WHERE id = ?", [(note_id, f) for f in fact_ids],
+        )
 
     def revert_supersession(self, fact_id: str) -> Fact:
         """Human control: undo a supersession. The newer fact is rejected and the old one is current again."""
@@ -121,7 +138,8 @@ class Store:
         return self.get_fact(new.supersedes)
 
     def subjects(self) -> List[str]:
-        return [r[0] for r in self.conn.execute("SELECT DISTINCT subject FROM facts")]
+        return [r[0] for r in self.conn.execute(
+            "SELECT subject FROM facts GROUP BY subject ORDER BY MIN(rowid)")]
 
     # ---- operation log ----
 

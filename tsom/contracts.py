@@ -1,7 +1,7 @@
 """Structured contracts shared by every component.
 
 Every part of the system (memory, tools, agent, harness) reads and writes
-only these four objects. `python -m tsom.contracts` prints their JSON schemas.
+only these objects. `python -m tsom.contracts` prints their JSON schemas.
 """
 
 from __future__ import annotations
@@ -42,6 +42,22 @@ class Fact(BaseModel):
     supersedes: Optional[str] = None  # id of the fact this one replaced
     source_note_id: Optional[str] = None
     status: Literal["active", "retired", "rejected"] = "active"
+    conflict_with: Optional[str] = None  # id of an active fact this one contradicts (Gap 1)
+
+
+Label = Literal["additive", "redundant", "corrective", "contradictory"]
+
+
+class FactOp(BaseModel):
+    """One fact-layer decision for a turn (Gap 1)."""
+
+    predicate: str
+    value: str
+    raw_label: str  # the label the model gave
+    label: Label  # the label that was applied
+    fact_id: Optional[str] = None  # new fact stored, if any
+    retired_id: Optional[str] = None  # fact retired by this decision, if any
+    conflict_with: Optional[str] = None
 
 
 class MemoryOp(BaseModel):
@@ -56,6 +72,9 @@ class MemoryOp(BaseModel):
     completion_tokens: int = 0
     latency_s: float = 0.0
     evolved: Optional[bool] = None  # write ops only: did A-Mem evolution change memory
+    labels: List[str] = []  # write ops only: applied fact labels (tsom)
+    raw_labels: List[str] = []  # write ops only: labels as the model gave them (tsom)
+    parse_failures: int = 0  # write ops only: extraction outputs that could not be parsed
     timestamp: float = Field(default_factory=time.time)
 
 
@@ -83,5 +102,5 @@ class RunConfig(BaseModel):
 
 
 if __name__ == "__main__":
-    for model in (Note, Fact, MemoryOp, RunConfig):
+    for model in (Note, Fact, FactOp, MemoryOp, RunConfig):
         print(json.dumps(model.model_json_schema(), indent=2))
