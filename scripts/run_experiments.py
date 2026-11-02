@@ -8,8 +8,9 @@ Suites:
   actions    harness.eval_actions twice: LLM labels (gap1_llm) and newest value wins (gap1_lww).
              tsom_conflict and tsom_both share gap1_llm; tsom_time shares gap1_lww. --configs is ignored.
   scenarios  harness.run_scenarios for each config.
-  locomo     harness.run_locomo on the first --conversations conversations for each config
-             (--limit caps questions per conversation).
+  locomo     harness.run_locomo on the first --conversations conversations for each config,
+             or on exactly --conversation-ids (e.g. 1,8) if given (--limit caps questions
+             per conversation).
 
 Configs are names in configs/exp/ (amem, tsom_conflict, tsom_time, tsom_both), "rag"
 for configs/rag_qwen2.5-3b.json, or a path to a .json file. Results go to
@@ -26,7 +27,7 @@ sys.path.insert(0, str(ROOT))
 
 from harness import eval_actions, run_locomo, run_scenarios  # noqa: E402
 from harness.make_tables import make_tables  # noqa: E402
-from harness.run_locomo import load_config  # noqa: E402
+from harness.run_locomo import load_config, parse_ids  # noqa: E402
 from harness.scenarios import DEFAULT_SCENARIOS  # noqa: E402
 
 DEFAULT_CONFIGS = "amem,tsom_conflict,tsom_time,tsom_both"
@@ -49,6 +50,8 @@ def main(argv=None):
     parser.add_argument("--suite", required=True, choices=["actions", "scenarios", "locomo"])
     parser.add_argument("--configs", default=DEFAULT_CONFIGS)
     parser.add_argument("--conversations", type=int, default=1)
+    parser.add_argument("--conversation-ids", type=parse_ids, metavar="IDS",
+                        help="comma-separated LoCoMo indices (locomo suite); overrides --conversations")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--out", default="results/ablation")
     parser.add_argument("--set", nargs="*", default=[], metavar="KEY=VALUE")
@@ -73,10 +76,11 @@ def main(argv=None):
                 run_scenarios.run(load_config(config_path(name), overrides), args.scenarios, args.limit,
                                   args.include_unreviewed)
             else:
-                overrides.append(f"max_samples={args.conversations}")
+                if args.conversation_ids is None:
+                    overrides.append(f"max_samples={args.conversations}")
                 if args.limit is not None:
                     overrides.append(f"max_questions={args.limit}")
-                run_locomo.run(load_config(config_path(name), overrides))
+                run_locomo.run(load_config(config_path(name), overrides, args.conversation_ids))
 
     make_tables(out)
     print(f"tables written to {out / 'tables.md'}")

@@ -15,4 +15,5 @@ openai
 pydantic>=2
 networkx
 tqdm
+matplotlib  # only for scripts/sweep_tau.py --plot
 pytest
