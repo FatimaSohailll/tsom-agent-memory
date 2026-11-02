@@ -4,7 +4,11 @@ __pycache__/
 venv/
 .env
 .pytest_cache/
-# Run outputs: commit only summary.md / summary.json from finished runs
-results/*/memory_sample_*.sqlite
-results/*/sample_*.jsonl
-results/*/ops_sample_*.jsonl
+# Run outputs: commit only the summary files (summary, actions_summary, scenarios_summary .md/.json) and tables.md
+results/**/memory_sample_*.sqlite
+results/**/sample_*.jsonl
+results/**/ops_sample_*.jsonl
+results/**/actions/
+results/**/scenarios/
+results/**/actions_facts.jsonl
+results/**/scenarios_results.jsonl
