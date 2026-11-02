@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from .contracts import Fact, FactOp
+from .dates import parse_session_date
 from .llm import LLM
 from .schema import PREDICATES, is_single_valued
 from .store import Store
@@ -175,8 +176,9 @@ Turn: {text}
     def process_turn(self, speaker: str, text: str, session_date: str,
                      source_note_id: Optional[str] = None) -> List[FactOp]:
         ops = []
+        date = parse_session_date(session_date)
         for pf in self.extract(speaker, text, session_date):
-            op = self._apply(speaker, pf, session_date, source_note_id)
+            op = self._apply(speaker, pf, date, source_note_id)
             if op is not None:
                 ops.append(op)
         return ops

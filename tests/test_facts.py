@@ -4,31 +4,14 @@ import pytest
 
 from agent.assistant import Assistant
 from tsom.contracts import Fact, RunConfig
-from tsom.facts import PROMPT_HEAD, FactLayer, parse_output
-from tsom.llm import LLM, fake_completion
+from tsom.facts import FactLayer, parse_output
+from tsom.llm import LLM
 from tsom.memory import MemorySystem
 from tsom.rag import RagMemory
 from tsom.store import Store
 from tsom.tools import MemoryTools
 
-
-class ScriptedLLM(LLM):
-    """Answers extraction prompts from a script; everything else goes to fake_completion.
-
-    Only _call is replaced, so calls and tokens are still counted in usage.
-    """
-
-    def __init__(self, script=()):
-        super().__init__("fake", "scripted")
-        self.script = list(script)
-        self.prompts, self.temperatures = [], []
-
-    def _call(self, prompt, temperature):
-        if prompt.startswith(PROMPT_HEAD):
-            self.prompts.append(prompt)
-            self.temperatures.append(temperature)
-            return self.script.pop(0), len(prompt.split()), 5
-        return fake_completion(prompt), len(prompt.split()), 5
+from scripted import ScriptedLLM
 
 
 def layer(*script, use_classifier=True, store=None):
@@ -302,8 +285,8 @@ def test_end_to_end_karachi_to_lahore():
     assert active(store) == ["Lahore", "biryani", "cat", "nihari", "startup"]
     history = store.fact_history("ali", "lives_in")
     assert [(f.object, f.status, f.valid_from, f.valid_to) for f in history] == [
-        ("Karachi", "retired", "8 May, 2023", "10 June, 2023"),
-        ("Lahore", "active", "10 June, 2023", None),
+        ("Karachi", "retired", "2023-05-08", "2023-06-10"),
+        ("Lahore", "active", "2023-06-10", None),
     ]
     assert history[0].source_note_id == n1 and history[1].source_note_id == n3
     assert history[1].supersedes == history[0].id
