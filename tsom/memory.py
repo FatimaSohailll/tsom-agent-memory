@@ -3,8 +3,9 @@
 Phase 1 runs A-Mem unchanged (system="amem") and records cost and latency
 for every operation. With system="tsom" every write also runs the fact layer
 (tsom/facts.py); use_classifier picks its label mode. use_validity adds current
-facts and OUTDATED markers to the retrieved context (tsom/context.py). The
-gate (Gap 2) is not implemented yet, so use_gate=True raises.
+facts and OUTDATED markers to the retrieved context (tsom/context.py).
+use_gate swaps in GatedAgenticMemory (tsom/gated_amem.py, Gap 2), which skips
+A-Mem's evolution calls unless a fact changed or a neighbour is tau similar.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from .amem_bridge import RobustAgenticMemorySystem
 from .context import fact_context, render, retrieve_blocks
 from .contracts import Fact, FactOp, MemoryOp, Note, RunConfig
 from .facts import FactLayer
+from .gated_amem import GatedAgenticMemory
 from .llm import LLM
 from .store import Store
 
@@ -23,16 +25,20 @@ from .store import Store
 class MemorySystem:
     def __init__(self, config: RunConfig, llm: LLM, db_path: str = ":memory:",
                  sample_id: Optional[str] = None):
-        if config.system == "tsom" and config.use_gate:
-            raise NotImplementedError("the gate (Gap 2) is not implemented yet")
         self.config = config
         self.llm = llm
         self.sample_id = sample_id
+        self.current_session: Optional[int] = None  # set by the replay harness
         self.store = Store(db_path)
         # Build A-Mem with a backend that needs no network at start-up,
         # then hand it our instrumented LLM so every call is counted.
-        self.amem = RobustAgenticMemorySystem(model_name=config.embedder, llm_backend="ollama",
-                                              llm_model=config.model)
+        if config.use_gate:
+            self.amem = GatedAgenticMemory(model_name=config.embedder, llm_backend="ollama",
+                                           llm_model=config.model, tau=config.tau,
+                                           link_k=config.gate_link_k)
+        else:
+            self.amem = RobustAgenticMemorySystem(model_name=config.embedder, llm_backend="ollama",
+                                                  llm_model=config.model)
         self.amem.llm_controller.llm = llm
         self.facts = FactLayer(self.store, llm, config.use_classifier) if config.system == "tsom" else None
 
@@ -46,7 +52,11 @@ class MemorySystem:
         failures_before = self.facts.parse_failures if self.facts else 0
         if self.facts is not None and speaker is not None:
             fact_ops = self.facts.process_turn(speaker, self._turn_text(content, speaker), time_str)
+        gated = isinstance(self.amem, GatedAgenticMemory)
+        if gated:
+            self.amem.set_write_context(op.label for op in fact_ops)
         note_id = self.amem.add_note(content, time=time_str)
+        decision = self.amem.last_decision if gated else None
         new_ids = [op.fact_id for op in fact_ops if op.fact_id]
         self.store.set_source_note(new_ids, note_id)
         latency = time.perf_counter() - start
@@ -60,6 +70,9 @@ class MemorySystem:
             evolved=self.amem.evo_cnt > evo_before,
             labels=[op.label for op in fact_ops], raw_labels=[op.raw_label for op in fact_ops],
             parse_failures=(self.facts.parse_failures - failures_before) if self.facts else 0,
+            session=self.current_session,
+            gate=decision.reason if decision else None,
+            neighbour_similarity=decision.max_similarity if decision else None,
         ))
         return note_id
 
@@ -68,11 +81,6 @@ class MemorySystem:
         """Undo Assistant.observe's prefix exactly; text without it is used as is."""
         prefix = "Speaker " + speaker + "says : "
         return content[len(prefix):] if content.startswith(prefix) else content
-
-    def gate(self, labels: List[str], neighbour_similarity: float) -> bool:
-        """Gap 2: True means run A-Mem evolution for this write."""
-        return any(lbl in ("corrective", "contradictory") for lbl in labels) or \
-            neighbour_similarity >= self.config.tau
 
     # ---- read path ----
 

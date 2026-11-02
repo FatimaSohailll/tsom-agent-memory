@@ -5,6 +5,7 @@ import pytest
 from agent.assistant import Assistant
 from tsom.contracts import Fact, RunConfig
 from tsom.facts import FactLayer, parse_output
+from tsom.gated_amem import GatedAgenticMemory
 from tsom.llm import LLM
 from tsom.memory import MemorySystem
 from tsom.rag import RagMemory
@@ -335,8 +336,8 @@ def test_rag_accepts_speaker():
 
 
 def test_flags():
-    with pytest.raises(NotImplementedError):
-        tsom(use_gate=True)
+    memory, _ = tsom(use_gate=True)
+    assert isinstance(memory.amem, GatedAgenticMemory)
     memory, _ = tsom(use_classifier=True, use_validity=True)
     assert memory.facts.use_classifier
     memory, _ = tsom()

@@ -75,6 +75,9 @@ class MemoryOp(BaseModel):
     labels: List[str] = []  # write ops only: applied fact labels (tsom)
     raw_labels: List[str] = []  # write ops only: labels as the model gave them (tsom)
     parse_failures: int = 0  # write ops only: extraction outputs that could not be parsed
+    session: Optional[int] = None  # write ops only: LoCoMo session being replayed
+    gate: Optional[str] = None  # write ops only: gate reason (Gap 2); None when ungated
+    neighbour_similarity: Optional[float] = None  # write ops only: max similarity the gate saw
     timestamp: float = Field(default_factory=time.time)
 
 
@@ -90,12 +93,14 @@ class RunConfig(BaseModel):
     retrieve_k: int = 10
     temperature_c5: float = 0.5  # A-Mem's default for adversarial questions
     tau: float = 0.8  # gate similarity threshold (Phase 2)
+    gate_link_k: int = 3  # links a skipped note gets to its most similar notes (Gap 2)
     seed: int = 42
     use_classifier: bool = False  # Gap 1 (Phase 2)
     use_gate: bool = False  # Gap 2 (Phase 2)
     use_validity: bool = False  # Gap 3 (Phase 2)
     dataset: str = "data/locomo10.json"
     max_samples: Optional[int] = None  # None = all 10 conversations
+    conversation_ids: Optional[List[int]] = None  # explicit LoCoMo indices; overrides max_samples
     max_sessions: Optional[int] = None  # None = every session
     max_questions: Optional[int] = None  # per conversation; None = all
     output_dir: str = "results"
@@ -105,6 +110,9 @@ class RunConfig(BaseModel):
         if self.system in ("amem", "rag") and (self.use_classifier or self.use_validity):
             raise ValueError(f'use_classifier and use_validity need system="tsom"; '
                              f'system="{self.system}" is a baseline and has no fact layer')
+        if self.use_gate and self.system != "tsom":
+            raise ValueError(f'use_gate needs system="tsom"; the gate reads the fact labels, '
+                             f'and system="{self.system}" has no fact layer')
         return self
 
 
