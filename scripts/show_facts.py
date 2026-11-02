@@ -19,14 +19,14 @@ from tsom.store import Store  # noqa: E402
 
 # (session date, [(speaker, text, canned output for --backend fake)])
 SESSIONS = [
-    ("8 May, 2023", [
+    ("10:00 am on 8 May, 2023", [
         ("Ali", "Hi! I just started a job at a bank in Karachi.",
          "FACT: works_at | bank | additive | none\nFACT: lives_in | Karachi | additive | none"),
         ("Sara", "Nice! How do you spend your evenings?", "NONE"),
         ("Ali", "Mostly eating biryani with my cat, Biscuit.",
          "FACT: likes | biryani | additive | none\nFACT: has_pet | cat | additive | none"),
     ]),
-    ("14 June, 2023", [
+    ("6:30 pm on 14 June, 2023", [
         ("Ali", "Big news: I moved to Lahore last week.",
          "FACT: lives_in | Lahore | corrective | Karachi"),
         ("Ali", "I also switched from the bank to a startup.",
