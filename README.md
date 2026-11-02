@@ -13,7 +13,7 @@ We build on A-Mem (Xu et al., NeurIPS 2025). A-Mem stores every conversation tur
 - **A-Mem** (`system: amem`): the base paper's memory, using the authors' code unchanged.
 - **RAG** (`system: rag`): stores raw turns and retrieves the top-k by embedding similarity. No LLM calls when storing, no links, no evolution. Same embedder, same answer prompts, same k as A-Mem, so the only difference is the memory.
 
-The three additions have interfaces in `tsom/memory.py` (`extract_facts`, `classify`, `gate`) and the fact tables already exist in `tsom/store.py`. They are built in Phase 2, along with the MemGPT-style baseline.
+The three additions live in `tsom/facts.py` (Gap 1), `tsom/gated_amem.py` (Gap 2) and `tsom/dates.py` / `tsom/context.py` (Gap 3); each is switched by its own flag. The MemGPT-style baseline is still to be built.
 
 ![Architecture](docs/architecture_diagram.png)
 
@@ -80,6 +80,58 @@ Everything goes to `results/<run_name>/`:
 - `memory_sample_<i>.sqlite`: the memory after the conversation. Look inside with `python scripts/inspect_memory.py results/<run>/memory_sample_0.sqlite --notes 5`.
 
 If a run stops halfway, run the same command again. Finished conversations are skipped.
+
+## Gap 2: conflict gate
+
+A-Mem runs its evolution calls (decision, then strengthen and/or update neighbours) on every write. The gate (`tsom/gated_amem.py`) runs them only if
+
+- a fact from this turn was labelled **corrective** or **contradictory** by the fact layer, or
+- some stored note has cosine similarity **>= tau** with the new note's content (the text A-Mem uses to find neighbours).
+
+Otherwise evolution is skipped and the note is linked to its `gate_link_k` most similar stored notes by embedding alone. The gate only removes A-Mem's evolution calls: the analysis call that builds the note and the fact extraction call always run, and the gate makes no LLM call itself, so it behaves the same on every backend (ollama, openai, vllm). Every write op records the gate's reason (`no_neighbours`, `conflict`, `neighbour`, `skipped`), the max similarity it saw and the LoCoMo session.
+
+Flags (in the run config):
+
+- `use_gate` (default `false`): turn the gate on. Needs `system: "tsom"`, because the gate reads the fact labels.
+- `tau` (default `0.8`): similarity threshold.
+- `gate_link_k` (default `3`): embedding links given to a note whose evolution was skipped.
+
+`configs/gate/tsom_full_gated.json` is the full system (classifier, validity and gate). `configs/exp/tsom_both.json` is the same system without the gate (the "-gate" ablation).
+
+**Choose tau on the development conversation (LoCoMo 0) only:**
+
+```bash
+python scripts/sweep_tau.py --taus 0.6,0.7,0.8,0.9 --plot
+```
+
+It runs the ungated system once and the gated system once per tau, all on conversation 0, and writes `results/tau_sweep/sweep.md`, `sweep.json` and `tau_sweep.png`. It also prints the similarity distribution so the grid can be moved. tau is never re-tuned on a test conversation.
+
+**Ungated vs gated on chosen conversations** (repeat with different seeds for mean and std):
+
+```bash
+python -m harness.run_locomo --config configs/exp/tsom_both.json --conversation-ids 1,8 --set seed=1 run_name=tsom_both_s1
+python -m harness.run_locomo --config configs/gate/tsom_full_gated.json --conversation-ids 1,8 --set seed=1 tau=0.8 run_name=gated_s1
+```
+
+`scripts/run_experiments.py --suite locomo` also accepts `--conversation-ids`.
+
+**Table and H2 verdict:**
+
+```bash
+python scripts/make_gate_table.py --ungated results/tsom_both_s1,results/tsom_both_s2,results/tsom_both_s3 --gated results/gated_s1,results/gated_s2,results/gated_s3
+```
+
+It writes `results/gate_table.md` and `.json` with mean and sample std (or "n=1, no std"), and checks H2 as three separate claims, each printed: (a) fewer LLM calls per write, (b) lower p50 and p95 write latency, (c) overall F1 within 2 points (a drop of at most 2 points). With fewer than 3 runs per side the verdict is marked indicative only.
+
+Metric definitions:
+
+- **LLM calls per write**: every LLM call made during `write()`, including tsom's fact extraction and A-Mem's analysis call.
+- **Write latency**: wall-clock time of `write()`, including extraction, embedding and the A-Mem call, excluding retrieval.
+- **p50 / p95**: percentiles over all writes in the run.
+- **Per-session rows**: totals per (conversation, session).
+- **Skip rate**: share of writes whose evolution the gate skipped.
+
+tsom's fact extraction adds about one LLM call per write compared with A-Mem, so the gate has to skip evolution on more than about half the writes before tsom is cheaper than A-Mem.
 
 ## Evaluation
 
