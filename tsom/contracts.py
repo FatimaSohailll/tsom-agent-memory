@@ -30,6 +30,30 @@ class Note(BaseModel):
     links: List[str] = []  # ids of linked notes
 
 
+class Fact(BaseModel):
+    """One append-only fact extracted from a note (temporal layer).
+
+    Rows are never deleted or overwritten; only status, valid_until,
+    superseded_by and observation_count may change after insertion.
+    """
+
+    fact_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    sample_id: str
+    note_id: str  # A-Mem note id the fact came from
+    entity: str
+    attribute: str
+    value: str
+    observed_at: int  # ingestion order (FactConsolidation: the fact's serial number)
+    observed_time: Optional[str] = None  # raw session/date string, if any
+    valid_from: Optional[str] = None  # only set when the text states it
+    valid_until: Optional[str] = None  # only set when the text states it
+    status: Literal["active", "superseded", "retracted"] = "active"
+    operation: Literal["ADD", "REPLACE", "CORRECT", "REAFFIRM"] = "ADD"
+    supersedes: List[str] = []  # fact_ids this fact replaces
+    superseded_by: Optional[str] = None
+    observation_count: int = 1
+
+
 class MemoryOp(BaseModel):
     """One logged memory operation. Used for latency and cost tables."""
 
@@ -49,7 +73,7 @@ class RunConfig(BaseModel):
     """Everything needed to reproduce one run."""
 
     run_name: str
-    system: Literal["amem", "rag"] = "amem"
+    system: Literal["amem", "rag", "tsom"] = "amem"
     backend: Literal["ollama", "openai", "vllm", "fake"] = "ollama"
     model: str = "qwen2.5:3b"
     base_url: Optional[str] = None  # vLLM or another OpenAI-compatible server
@@ -65,5 +89,5 @@ class RunConfig(BaseModel):
 
 
 if __name__ == "__main__":
-    for model in (Note, MemoryOp, RunConfig):
+    for model in (Note, Fact, MemoryOp, RunConfig):
         print(json.dumps(model.model_json_schema(), indent=2))
