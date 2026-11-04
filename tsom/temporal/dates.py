@@ -8,6 +8,7 @@ parse cleanly (ISO "2020", "2020-05", "2020-05-17", or "17 May 2020" /
 from __future__ import annotations
 
 import re
+from datetime import datetime
 from typing import Optional, Tuple
 
 _MONTHS = {m: i for i, m in enumerate(
@@ -40,11 +41,51 @@ def date_key(s: Optional[str]) -> Optional[Tuple[int, ...]]:
     return None
 
 
-def is_before(a: Optional[str], b: Optional[str]) -> bool:
-    """True only if both parse and a is strictly earlier than b, compared at
-    the precision both share ("2020" is not before "2020-05")."""
-    ka, kb = date_key(a), date_key(b)
+def key_is_before(ka: Optional[Tuple[int, ...]], kb: Optional[Tuple[int, ...]]) -> bool:
+    """True only if both keys exist and ka is strictly earlier than kb, compared
+    at the coarser precision ("2020" is not before "2020-05")."""
     if ka is None or kb is None:
         return False
     k = min(len(ka), len(kb))
     return ka[:k] < kb[:k]
+
+
+def is_before(a: Optional[str], b: Optional[str]) -> bool:
+    """key_is_before for two date strings; unparseable dates are never "before"."""
+    return key_is_before(date_key(a), date_key(b))
+
+
+_YEAR = re.compile(r"\b(19|20)\d{2}\b")
+
+
+def parse_observed_time(s: Optional[str]) -> Optional[Tuple[int, ...]]:
+    """Date key of a session date such as "2024-03-15" or "1:56 pm on 8 May, 2023".
+
+    None if there is no four-digit year (so labels like "facts 0-19" are never
+    read as dates) or dateutil cannot parse it. Components the text does not
+    contain are left out of the key, found by parsing against two different
+    defaults.
+    """
+    if not s or not isinstance(s, str) or not _YEAR.search(s):
+        return None
+    try:
+        from dateutil import parser
+        a = parser.parse(s, fuzzy=True, default=datetime(1, 1, 1))
+        b = parser.parse(s, fuzzy=True, default=datetime(2, 2, 2))
+    except (ValueError, OverflowError, TypeError):
+        return None
+    if a.year != b.year:
+        return None
+    key: Tuple[int, ...] = (a.year,)
+    if a.month == b.month:
+        key += (a.month,)
+        if a.day == b.day:
+            key += (a.day,)
+    return key
+
+
+def effective_start(fact) -> Optional[Tuple[int, ...]]:
+    """When a fact is known to have begun: its stated valid_from, else the date
+    of the session it was learned in (observed_time). None if neither parses.
+    Only ever used to compare, never written into a fact."""
+    return date_key(fact.valid_from) or parse_observed_time(fact.observed_time)

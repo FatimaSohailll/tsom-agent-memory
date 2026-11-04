@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from typing import Dict, List, Optional
 
-_KEYS = ("ENTITY", "ATTRIBUTE", "VALUE", "VALID_FROM", "VALID_UNTIL", "SOURCE")
+_KEYS = ("ENTITY", "ATTRIBUTE", "VALUE", "VALID_FROM", "VALID_UNTIL", "TENSE", "SOURCE")
 _LINE = re.compile(
     r"^[\s*\-•>#]*(?:\d+[.)]\s+)?[*_`]*(FACT\s*\d*|" + "|".join(_KEYS) + r")[*_`]*\s*:[*_`]*\s*(.*)$",
     re.IGNORECASE,
@@ -49,9 +49,16 @@ def _opt(value: Optional[str]) -> Optional[str]:
     return value
 
 
+def _tense(value: Optional[str]) -> str:
+    """PAST, PRESENT or UNKNOWN; anything missing or invalid is UNKNOWN."""
+    tok = re.search(r"\b(PAST|PRESENT|UNKNOWN)\b", value or "", re.IGNORECASE)
+    return tok.group(1).upper() if tok else "UNKNOWN"
+
+
 def parse_facts(response: str, with_source: bool = False) -> List[dict]:
     """Parse extractor output into dicts with entity, attribute, value,
-    valid_from, valid_until (and "source": int | None when with_source).
+    valid_from, valid_until, temporal_status (and "source": int | None when
+    with_source).
 
     Blocks missing ENTITY, ATTRIBUTE or VALUE are skipped; NONE becomes None
     for the validity fields. Returns [] for NO_FACTS or unreadable output.
@@ -68,6 +75,7 @@ def parse_facts(response: str, with_source: bool = False) -> List[dict]:
                 "value": value,
                 "valid_from": _opt(b.get("VALID_FROM")),
                 "valid_until": _opt(b.get("VALID_UNTIL")),
+                "temporal_status": _tense(b.get("TENSE")),
             }
             if with_source:
                 m = re.search(r"\d+", b.get("SOURCE", ""))

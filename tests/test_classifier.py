@@ -59,10 +59,12 @@ def test_llm_outcomes(response, expected):
     c = UpdateClassifier(llm, store)
     op, old = c.classify("s0", new(source_text="She moved to Karachi."), 2)
     assert op == expected
-    assert [f.fact_id for f in old] == ([] if expected == "ADD" else [a.fact_id])
+    assert [f.fact_id for f in old] == [a.fact_id]  # ADD touches the old fact but leaves it active
     p = llm.prompts[0]
-    assert "Alice | lives_in | Lahore (learned at step 1)" in p
-    assert "alice | Lives_In | Karachi (learned at step 2)" in p
+    assert "Alice | lives_in | Lahore (learned at step 1, session unknown, " \
+           "valid from: not stated, valid until: not stated)" in p
+    assert "alice | Lives_In | Karachi (learned at step 2, session unknown, " \
+           "valid from: not stated, valid until: not stated, tense: UNKNOWN)" in p
     assert "She moved to Karachi." in p
 
 
@@ -114,8 +116,10 @@ def test_historical_needs_every_old_after():
     seed(store, "Lahore", 5, valid_from="2022")
     seed(store, "Karachi", 6, valid_from="2018")
     llm = Canned()
-    op, _ = UpdateClassifier(llm, store).classify("s0", new("Paris", valid_from="2020"), 7)
-    assert op == "REPLACE" and len(llm.prompts) == 1
+    c = UpdateClassifier(llm, store)
+    op, _ = c.classify("s0", new("Paris", valid_from="2020"), 7)
+    # not before every old fact, so not ADD_HISTORICAL; two active values -> learned multi-valued
+    assert op == "ADD" and c.last_decision["source"] == "learned_multivalued" and not llm.prompts
 
 
 def test_op_counts():

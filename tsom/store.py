@@ -41,7 +41,9 @@ CREATE TABLE IF NOT EXISTS facts (
     operation TEXT NOT NULL DEFAULT 'ADD',
     supersedes TEXT NOT NULL DEFAULT '[]',
     superseded_by TEXT,
-    observation_count INTEGER NOT NULL DEFAULT 1
+    observation_count INTEGER NOT NULL DEFAULT 1,
+    temporal_status TEXT NOT NULL DEFAULT 'UNKNOWN',
+    raw_attribute TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_facts_key ON facts (sample_id, entity_key, attr_key);
 CREATE INDEX IF NOT EXISTS idx_facts_note ON facts (sample_id, note_id);
@@ -63,6 +65,15 @@ class Store:
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self):
+        """Databases written before a facts column existed get it added."""
+        cols = {r["name"] for r in self.conn.execute("PRAGMA table_info(facts)")}
+        for name, ddl in (("temporal_status", "TEXT NOT NULL DEFAULT 'UNKNOWN'"),
+                          ("raw_attribute", "TEXT")):
+            if name not in cols:
+                self.conn.execute(f"ALTER TABLE facts ADD COLUMN {name} {ddl}")
 
     @contextmanager
     def atomic(self):
@@ -118,13 +129,14 @@ class Store:
         self.conn.execute(
             "INSERT INTO facts (fact_id, sample_id, note_id, entity, attribute, value,"
             " entity_key, attr_key, observed_at, observed_time, valid_from, valid_until,"
-            " status, operation, supersedes, superseded_by, observation_count)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " status, operation, supersedes, superseded_by, observation_count, temporal_status,"
+            " raw_attribute)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (fact.fact_id, fact.sample_id, fact.note_id, fact.entity, fact.attribute,
              fact.value, norm(fact.entity), norm(fact.attribute), fact.observed_at,
              fact.observed_time, fact.valid_from, fact.valid_until, fact.status,
              fact.operation, json.dumps(fact.supersedes), fact.superseded_by,
-             fact.observation_count),
+             fact.observation_count, fact.temporal_status, fact.raw_attribute),
         )
 
     def update_fact_status(self, fact_id: str, status: str,
@@ -185,6 +197,18 @@ class Store:
         return [r[0] for r in self.conn.execute(
             "SELECT DISTINCT entity_key FROM facts WHERE sample_id = ?", (sample_id,))]
 
+    def attribute_counts(self, sample_id: str, entity: Optional[str] = None) -> List[tuple]:
+        """(attribute, number of facts) per distinct attribute key, most used first.
+        The attribute is spelled as first stored. Limited to one entity if given."""
+        where, args = "sample_id = ?", [sample_id]
+        if entity is not None:
+            where, args = where + " AND entity_key = ?", args + [norm(entity)]
+        rows = self.conn.execute(
+            "SELECT f.attribute, c.n FROM facts f JOIN ("
+            f" SELECT COUNT(*) AS n, MIN(rowid) AS r FROM facts WHERE {where} GROUP BY attr_key"
+            ") c ON f.rowid = c.r ORDER BY c.n DESC, c.r", args)
+        return [(r[0], r[1]) for r in rows]
+
     def entity_facts(self, sample_id: str, entity: str) -> List[Fact]:
         """Every fact (all attributes, all statuses) about an entity."""
         rows = self.conn.execute(
@@ -201,7 +225,8 @@ class Store:
             valid_from=row["valid_from"], valid_until=row["valid_until"],
             status=row["status"], operation=row["operation"],
             supersedes=json.loads(row["supersedes"]), superseded_by=row["superseded_by"],
-            observation_count=row["observation_count"])
+            observation_count=row["observation_count"], temporal_status=row["temporal_status"],
+            raw_attribute=row["raw_attribute"])
 
     # ---- note versions ----
 

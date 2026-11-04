@@ -151,6 +151,6 @@ def _fake_facts(body: str, batch: bool) -> str:
             if batch:
                 lines.append(f"SOURCE: {source}")
             lines += [f"ENTITY: {entity.strip()}", "ATTRIBUTE: is", f"VALUE: {value.strip()}",
-                      "VALID_FROM: NONE", "VALID_UNTIL: NONE"]
+                      "VALID_FROM: NONE", "VALID_UNTIL: NONE", "TENSE: UNKNOWN"]
             blocks.append("\n".join(lines))
     return "\n\n".join(blocks) if blocks else "NO_FACTS"

@@ -52,6 +52,10 @@ class Fact(BaseModel):
     supersedes: List[str] = []  # fact_ids this fact replaces
     superseded_by: Optional[str] = None
     observation_count: int = 1
+    # Tense of the wording only (never changes valid_from/valid_until).
+    temporal_status: Literal["PAST", "PRESENT", "UNKNOWN"] = "UNKNOWN"
+    # The extractor's own attribute name when it was snapped to an existing one.
+    raw_attribute: Optional[str] = None
 
 
 class MemoryOp(BaseModel):
@@ -81,6 +85,12 @@ class RunConfig(BaseModel):
     base_url: Optional[str] = None  # vLLM or another OpenAI-compatible server
     embedder: str = "all-MiniLM-L6-v2"
     retrieve_k: int = 10
+    # tsom only: deterministic "several values at once" rules in the update classifier.
+    # Both are off unless a config turns them on; the learned rule has no flag.
+    seed_multivalued: bool = False  # attribute is in multivalued_attributes -> ADD
+    additive_cue: bool = False  # "also"/"as well"/"too" in the sentence -> ADD
+    multivalued_attributes: List[str] = ["speaks", "languages", "children", "siblings",
+                                         "hobbies", "member_of"]
     temperature_c5: float = 0.5  # A-Mem's default for adversarial questions
     seed: int = 42
     dataset: str = "data/locomo10.json"

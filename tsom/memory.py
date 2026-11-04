@@ -16,6 +16,7 @@ from .llm import LLM
 from .store import Store
 from .temporal.classifier import UpdateClassifier
 from .temporal.consolidator import Consolidator
+from .temporal.attributes import AttributeCanonicalizer
 from .temporal.extractor import FactExtractor
 from .temporal.retriever import TemporalRetriever
 from .temporal.serial import split_serial_facts
@@ -38,7 +39,12 @@ class MemorySystem:
         self.amem.llm_controller.llm = llm
         if config.system == "tsom":
             self.extractor = FactExtractor(llm)
-            self.classifier = UpdateClassifier(llm, self.store)
+            self.attributes = AttributeCanonicalizer(
+                self.store, encode=lambda texts: self.amem.retriever.model.encode(texts))
+            self.classifier = UpdateClassifier(
+                llm, self.store, seed_multivalued=config.seed_multivalued,
+                additive_cue=config.additive_cue,
+                multivalued_attributes=config.multivalued_attributes)
             self.consolidator = Consolidator(self.store)
             self.observed_counter = 0
             self.temporal_retriever = TemporalRetriever(self)
@@ -105,20 +111,33 @@ class MemorySystem:
         # Extract facts; numbered lines carry their own serial as observed_at.
         items = []  # (new fact dict, observed_at)
         try:
+            hint = self.attributes.known_attributes(sid, content)  # names to reuse
             if serials:
-                facts = self.extractor.extract_batch([text for _, text in serials])
+                facts = self.extractor.extract_batch([text for _, text in serials], hint)
                 for f in sorted(facts, key=lambda f: f["source"]):
                     serial, text = serials[f["source"]]
                     self.observed_counter = max(self.observed_counter, serial)
                     items.append(({**f, "source_text": text}, serial))
             else:
-                for f in self.extractor.extract(content):
+                for f in self.extractor.extract(content, hint):
                     self.observed_counter += 1
                     items.append(({**f, "source_text": content}, self.observed_counter))
         except Exception as e:
             failures += 1
             log.warning("temporal extraction failed for note %s (%r): %s",
                         note_id, content[:200], e, exc_info=True)
+
+        # Snap drifted attribute names (speaks_language -> speaks) to the entity's own.
+        for new, _ in items:
+            try:
+                attribute, why = self.attributes.canonicalize(sid, new["entity"], new["attribute"])
+            except Exception as e:  # never let naming cleanup lose a fact
+                log.warning("attribute canonicalization failed for %r: %s", new, e)
+                continue
+            if why:
+                log.info("attribute %r snapped to %r for %r (%s)",
+                         new["attribute"], attribute, new["entity"], why)
+                new["raw_attribute"], new["attribute"] = new["attribute"], attribute
 
         # Keep the old state of every note A-Mem's evolution rewrote. A note
         # that yields no facts is stamped with the current observed_counter.
@@ -137,9 +156,15 @@ class MemorySystem:
             op = "classify"
             try:
                 with self.store.atomic():
-                    op, old = self.classifier.classify(sid, new, observed_at)
+                    op, old = self.classifier.classify(sid, new, observed_at, time_str)
                     live = self.consolidator.apply(sid, note_id, new, op, old,
                                                    observed_at, time_str)
+                    if self.consolidator.last_op != op:  # e.g. REPLACE guarded into ADD_HISTORICAL
+                        counts = self.classifier.op_counts
+                        counts[op] -= 1
+                        if counts[op] <= 0:
+                            del counts[op]
+                        counts[self.consolidator.last_op] += 1
                 fact_ids.append(live.fact_id)
             except Exception as e:
                 failures += 1

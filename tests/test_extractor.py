@@ -20,6 +20,7 @@ ATTRIBUTE: capital_of
 VALUE: Paris
 VALID_FROM: 1900
 VALID_UNTIL: NONE
+TENSE: present
 
 FACT 2:
 ENTITY: Paris
@@ -30,9 +31,9 @@ VALID_UNTIL: N/A"""
     facts = parse_facts(resp)
     assert facts == [
         {"entity": "France", "attribute": "capital_of", "value": "Paris",
-         "valid_from": "1900", "valid_until": None},
+         "valid_from": "1900", "valid_until": None, "temporal_status": "PRESENT"},
         {"entity": "Paris", "attribute": "located_in", "value": "France",
-         "valid_from": None, "valid_until": None},
+         "valid_from": None, "valid_until": None, "temporal_status": "UNKNOWN"},
     ]
 
 

@@ -3,5 +3,7 @@
   "system": "tsom",
   "backend": "ollama",
   "model": "qwen2.5:3b",
-  "retrieve_k": 10
+  "retrieve_k": 10,
+  "seed_multivalued": false,
+  "additive_cue": false
 }
