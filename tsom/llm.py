@@ -100,6 +100,13 @@ def fake_completion(prompt: str) -> str:
     It returns text in the shapes A-Mem's parsers expect, so the whole pipeline
     runs without a model. Its answers are meaningless; only the plumbing is tested.
     """
+    if prompt.startswith("A memory already contains this fact:"):
+        new_part = prompt.split("A new fact arrives:")[-1].split("Classify how")[0].lower()
+        if any(w in new_part for w in ("actually", "mistaken", "correction")):
+            return "OPERATION: CORRECT\nREASON: fake"
+        if " also " in new_part:
+            return "OPERATION: ADD\nREASON: fake"
+        return "OPERATION: REPLACE\nREASON: fake"
     if prompt.startswith("Extract the atomic facts stated in each numbered statement."):
         return _fake_facts(prompt.split("\nStatements:\n")[-1], batch=True)
     if prompt.startswith("Extract the atomic facts stated in the text."):

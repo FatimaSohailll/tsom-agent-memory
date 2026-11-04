@@ -40,3 +40,19 @@ VALID_UNTIL: ...
 
 Statements:
 {statements}"""
+
+UPDATE_CLASSIFY_PROMPT = """A memory already contains this fact:
+  {old_lines}
+A new fact arrives:
+  {entity} | {attribute} | {new_value} (learned at step {new_observed})
+{extra_context}
+
+Classify how the new fact relates to the old one:
+- REPLACE: the value changed over time; the old value was true before.
+- CORRECT: the old value was wrong / never true (e.g. "actually", "I was mistaken", "correction").
+- ADD: both can be true at the same time (multi-valued relation such as languages_spoken, children, member_of).
+If unsure and the relation normally has one value, choose REPLACE.
+
+Respond using EXACTLY this format:
+OPERATION: <REPLACE | CORRECT | ADD>
+REASON: <one short sentence>"""

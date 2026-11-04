@@ -76,3 +76,32 @@ def parse_facts(response: str, with_source: bool = False) -> List[dict]:
     except Exception:
         return []
     return facts
+
+
+_OPERATION = re.compile(r"^[\s*\-•>#]*[*_`]*OPERATION[*_`]*\s*:[*_`]*\s*(.*)$", re.IGNORECASE)
+_REASON = re.compile(r"^[\s*\-•>#]*[*_`]*REASON[*_`]*\s*:[*_`]*\s*(.*)$", re.IGNORECASE)
+
+
+def parse_update_classification(response: str) -> tuple:
+    """Parse "OPERATION: ... / REASON: ..." into (operation, reason).
+
+    operation is REPLACE, CORRECT or ADD; anything unparseable gives REPLACE.
+    Only the OPERATION line is read for the decision, so words in REASON
+    cannot change it.
+    """
+    op, reason = "REPLACE", ""
+    try:
+        found = False
+        for line in (response or "").splitlines():
+            m = _OPERATION.match(line)
+            if m and not found:
+                tok = re.search(r"\b(REPLACE|CORRECT|ADD)\b", m.group(1), re.IGNORECASE)
+                if tok:
+                    op, found = tok.group(1).upper(), True
+                continue
+            m = _REASON.match(line)
+            if m:
+                reason = _clean(m.group(1))
+    except Exception:
+        return "REPLACE", ""
+    return op, reason
