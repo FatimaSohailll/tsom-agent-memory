@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import contextmanager
 from typing import List, Optional
 
 from .contracts import Fact, MemoryOp, Note
@@ -62,6 +63,18 @@ class Store:
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
+
+    @contextmanager
+    def atomic(self):
+        """Undo every write made inside the block if it raises (SQLite savepoint)."""
+        self.conn.execute("SAVEPOINT atomic_op")
+        try:
+            yield
+        except BaseException:
+            self.conn.execute("ROLLBACK TO atomic_op")
+            self.conn.execute("RELEASE atomic_op")
+            raise
+        self.conn.execute("RELEASE atomic_op")
 
     def close(self):
         self.conn.commit()

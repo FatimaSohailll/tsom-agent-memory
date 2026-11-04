@@ -6,6 +6,7 @@ into SQLite, and records cost and latency for every operation.
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import List, Optional
 
@@ -13,6 +14,12 @@ from .amem_bridge import RobustAgenticMemorySystem
 from .contracts import MemoryOp, Note, RunConfig
 from .llm import LLM
 from .store import Store
+from .temporal.classifier import UpdateClassifier
+from .temporal.consolidator import Consolidator
+from .temporal.extractor import FactExtractor
+from .temporal.serial import split_serial_facts
+
+log = logging.getLogger("tsom.memory")
 
 
 class MemorySystem:
@@ -27,10 +34,17 @@ class MemorySystem:
         self.amem = RobustAgenticMemorySystem(model_name=config.embedder, llm_backend="ollama",
                                               llm_model=config.model)
         self.amem.llm_controller.llm = llm
+        if config.system == "tsom":
+            self.extractor = FactExtractor(llm)
+            self.classifier = UpdateClassifier(llm, self.store)
+            self.consolidator = Consolidator(self.store)
+            self.observed_counter = 0
 
     # ---- write path ----
 
     def write(self, content: str, time_str: str) -> str:
+        temporal = self.config.system == "tsom"
+        note_state = self._note_state() if temporal else None
         before = self.llm.usage.snapshot()
         evo_before = self.amem.evo_cnt
         start = time.perf_counter()
@@ -44,6 +58,8 @@ class MemorySystem:
             completion_tokens=used.completion_tokens, latency_s=latency,
             evolved=self.amem.evo_cnt > evo_before,
         ))
+        if temporal:
+            self._temporal_write(note_id, content, time_str, note_state)
         return note_id
 
     # ---- read path ----
@@ -54,6 +70,80 @@ class MemorySystem:
         self.store.log_op(MemoryOp(op_type="search", system=self.config.system,
                                    sample_id=self.sample_id, latency_s=time.perf_counter() - start))
         return {"notes": context}
+
+    # ---- temporal layer (system == "tsom" only) ----
+
+    def _note_state(self) -> dict:
+        """note_id -> (context, tags, links as note ids), copied so that
+        A-Mem's in-place evolution cannot change the snapshot."""
+        ids = list(self.amem.memories.keys())
+        return {nid: (n.context, list(n.tags), self._link_ids(n, ids))
+                for nid, n in self.amem.memories.items()}
+
+    @staticmethod
+    def _link_ids(note, ids: List[str]) -> List[str]:
+        return [ids[i] for i in note.links if isinstance(i, int) and 0 <= i < len(ids)]
+
+    def _temporal_write(self, note_id: str, content: str, time_str: str, note_state: dict):
+        sid = self.sample_id or ""
+        before = self.llm.usage.snapshot()
+        counts_before = self.classifier.op_counts.copy()
+        start = time.perf_counter()
+        serials = split_serial_facts(content)
+        failures = 0
+
+        # Extract facts; numbered lines carry their own serial as observed_at.
+        items = []  # (new fact dict, observed_at)
+        try:
+            if serials:
+                facts = self.extractor.extract_batch([text for _, text in serials])
+                for f in sorted(facts, key=lambda f: f["source"]):
+                    serial, text = serials[f["source"]]
+                    self.observed_counter = max(self.observed_counter, serial)
+                    items.append(({**f, "source_text": text}, serial))
+            else:
+                for f in self.extractor.extract(content):
+                    self.observed_counter += 1
+                    items.append(({**f, "source_text": content}, self.observed_counter))
+        except Exception as e:
+            failures += 1
+            log.warning("temporal extraction failed for note %s (%r): %s",
+                        note_id, content[:200], e, exc_info=True)
+
+        # Keep the old state of every note A-Mem's evolution rewrote. A note
+        # that yields no facts is stamped with the current observed_counter.
+        change_at = items[0][1] if items else self.observed_counter
+        ids = list(self.amem.memories.keys())
+        for nid, (context, tags, links) in note_state.items():
+            n = self.amem.memories[nid]
+            if (n.context, list(n.tags), self._link_ids(n, ids)) != (context, tags, links):
+                version = len(self.store.note_versions(nid)) + 1
+                self.store.add_note_version(nid, version, change_at, context, tags, links,
+                                            changed_by_note_id=note_id)
+
+        # A failing fact is logged and skipped; the A-Mem note stays.
+        fact_ids = []
+        for new, observed_at in items:
+            op = "classify"
+            try:
+                with self.store.atomic():
+                    op, old = self.classifier.classify(sid, new, observed_at)
+                    live = self.consolidator.apply(sid, note_id, new, op, old,
+                                                   observed_at, time_str)
+                fact_ids.append(live.fact_id)
+            except Exception as e:
+                failures += 1
+                log.warning("temporal step failed (op=%s) for fact %r in note %s: %s",
+                            op, new, note_id, e, exc_info=True)
+
+        used = self.llm.usage.since(before)
+        self.store.log_op(MemoryOp(
+            op_type="temporal_write", system=self.config.system, sample_id=self.sample_id,
+            ids_touched=[note_id] + fact_ids, llm_calls=used.calls,
+            prompt_tokens=used.prompt_tokens, completion_tokens=used.completion_tokens,
+            latency_s=time.perf_counter() - start,
+            op_counts=dict(self.classifier.op_counts - counts_before), failures=failures,
+        ))
 
     # ---- helpers ----
 

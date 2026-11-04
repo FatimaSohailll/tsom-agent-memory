@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -57,7 +57,7 @@ class Fact(BaseModel):
 class MemoryOp(BaseModel):
     """One logged memory operation. Used for latency and cost tables."""
 
-    op_type: Literal["write", "search", "answer"]
+    op_type: Literal["write", "search", "answer", "temporal_write"]
     system: str
     sample_id: Optional[str] = None
     ids_touched: List[str] = []
@@ -66,6 +66,8 @@ class MemoryOp(BaseModel):
     completion_tokens: int = 0
     latency_s: float = 0.0
     evolved: Optional[bool] = None  # write ops only: did A-Mem evolution change memory
+    op_counts: Dict[str, int] = {}  # temporal_write only: fact operations (ADD, REPLACE, ...)
+    failures: int = 0  # temporal_write only: extraction/classify/apply steps that failed and were skipped
     timestamp: float = Field(default_factory=time.time)
 
 
