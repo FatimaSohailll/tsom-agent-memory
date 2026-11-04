@@ -1,6 +1,6 @@
 """RAG baseline: store raw turns, retrieve the top-k most similar ones.
 
-No LLM calls on write, no links, no evolution, no facts. It uses the same
+No LLM calls on write, no links, no evolution. It uses the same
 embedder (all-MiniLM-L6-v2) and the same retriever class as A-Mem, and it
 formats retrieved turns the way A-Mem does, so the answer prompts are
 identical and the only difference between the two systems is the memory.
@@ -13,7 +13,7 @@ import time
 from typing import List, Optional
 
 from .amem_bridge import SimpleEmbeddingRetriever
-from .contracts import Fact, MemoryOp, Note, RunConfig
+from .contracts import MemoryOp, Note, RunConfig
 from .llm import LLM
 from .store import Store
 
@@ -54,13 +54,7 @@ class RagMemory:
                 context += "talk start time:" + n.timestamp + "memory content: " + n.content + "\n"
         self.store.log_op(MemoryOp(op_type="search", system=self.config.system,
                                    sample_id=self.sample_id, latency_s=time.perf_counter() - start))
-        return {"notes": context, "facts": []}
-
-    def fact_history(self, entity: str, predicate: Optional[str] = None) -> List[Fact]:
-        return []  # RAG keeps no facts
-
-    def inspect(self, entity: str) -> dict:
-        return {"entity": entity, "current": [], "retired": []}
+        return {"notes": context}
 
     def sync_all(self):
         self.store.conn.commit()
