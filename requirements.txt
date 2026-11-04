@@ -16,3 +16,5 @@ pydantic>=2
 networkx
 tqdm
 pytest
+# FactConsolidation benchmark (MemoryAgentBench)
+datasets

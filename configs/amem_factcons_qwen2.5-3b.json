@@ -1,0 +1,7 @@
+{
+  "run_name": "amem_factcons_qwen2.5-3b",
+  "system": "amem",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "retrieve_k": 10
+}

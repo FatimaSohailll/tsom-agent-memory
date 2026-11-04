@@ -100,6 +100,8 @@ def fake_completion(prompt: str) -> str:
     It returns text in the shapes A-Mem's parsers expect, so the whole pipeline
     runs without a model. Its answers are meaningless; only the plumbing is tested.
     """
+    if prompt.startswith("Answer the question using the memory below."):
+        return "fake answer"
     if prompt.startswith("A memory already contains this fact:"):
         new_part = prompt.split("A new fact arrives:")[-1].split("Classify how")[0].lower()
         if any(w in new_part for w in ("actually", "mistaken", "correction")):
