@@ -17,9 +17,11 @@ from .store import Store
 from .temporal.classifier import UpdateClassifier
 from .temporal.consolidator import Consolidator
 from .temporal.extractor import FactExtractor
+from .temporal.retriever import TemporalRetriever
 from .temporal.serial import split_serial_facts
 
 log = logging.getLogger("tsom.memory")
+FACTS_HEADER = "Known facts (CURRENT = latest known value):"
 
 
 class MemorySystem:
@@ -39,6 +41,7 @@ class MemorySystem:
             self.classifier = UpdateClassifier(llm, self.store)
             self.consolidator = Consolidator(self.store)
             self.observed_counter = 0
+            self.temporal_retriever = TemporalRetriever(self)
 
     # ---- write path ----
 
@@ -66,10 +69,17 @@ class MemorySystem:
 
     def search(self, query: str, k: int) -> dict:
         start = time.perf_counter()
-        context = self.amem.find_related_memories_raw(query, k=k)
+        if self.config.system == "tsom":
+            found = self.temporal_retriever.search(query, k)
+            notes = found["notes"]
+            if found["facts"]:
+                notes = (FACTS_HEADER + "\n" + found["facts"] + "\n\n" + notes)
+            result = {"notes": notes, "facts": found["facts"], "query_type": found["query_type"]}
+        else:
+            result = {"notes": self.amem.find_related_memories_raw(query, k=k)}
         self.store.log_op(MemoryOp(op_type="search", system=self.config.system,
                                    sample_id=self.sample_id, latency_s=time.perf_counter() - start))
-        return {"notes": context}
+        return result
 
     # ---- temporal layer (system == "tsom" only) ----
 

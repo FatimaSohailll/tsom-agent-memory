@@ -180,6 +180,18 @@ class Store:
             " ORDER BY observed_at, rowid", [sample_id, *note_ids])
         return [self._fact(r) for r in rows]
 
+    def entity_keys(self, sample_id: str) -> List[str]:
+        """Distinct normalized entity keys that have at least one fact."""
+        return [r[0] for r in self.conn.execute(
+            "SELECT DISTINCT entity_key FROM facts WHERE sample_id = ?", (sample_id,))]
+
+    def entity_facts(self, sample_id: str, entity: str) -> List[Fact]:
+        """Every fact (all attributes, all statuses) about an entity."""
+        rows = self.conn.execute(
+            "SELECT * FROM facts WHERE sample_id = ? AND entity_key = ?"
+            " ORDER BY observed_at, rowid", (sample_id, norm(entity)))
+        return [self._fact(r) for r in rows]
+
     @staticmethod
     def _fact(row) -> Fact:
         return Fact(

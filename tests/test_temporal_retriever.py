@@ -1,0 +1,138 @@
+import pytest
+
+from tsom.contracts import Fact, RunConfig
+from tsom.llm import LLM
+from tsom.memory import FACTS_HEADER, MemorySystem
+from tsom.temporal.retriever import classify_query
+
+
+class Scripted(LLM):
+    def __init__(self, facts):
+        super().__init__("fake", "fake")
+        self.facts = list(facts)
+
+    def get_completion(self, prompt, temperature=0.7):
+        if self.facts and prompt.startswith("Extract the atomic facts stated in the text."):
+            self.usage.calls += 1
+            return self.facts.pop(0)
+        return super().get_completion(prompt, temperature)
+
+
+def ft(value, start="NONE", end="NONE", entity="Alice", attr="lives_in"):
+    return (f"FACT 1:\nENTITY: {entity}\nATTRIBUTE: {attr}\nVALUE: {value}\n"
+            f"VALID_FROM: {start}\nVALID_UNTIL: {end}")
+
+
+def system(llm=None, name="tsom"):
+    return MemorySystem(RunConfig(run_name="t", system=name, backend="fake", model="fake"),
+                        llm or LLM("fake", "fake"), sample_id="s0")
+
+
+@pytest.mark.parametrize("query,expected", [
+    ("where does Alice live", ("current", None)),
+    ("where did Alice live in 2022", ("historical", "2022")),
+    ("Alice March 2021", ("historical", "2021-03")),
+    ("Alice in May 2020", ("historical", "2020-05")),
+    ("Alice 5th May 1999", ("historical", "1999-05")),
+    ("Alice she may live in Paris", ("current", None)),
+    ("Alice used to live in Rome", ("historical", None)),
+    ("what was it originally", ("historical", None)),
+    ("what happened in december", ("historical", None)),
+    ("Alice previously", ("historical", None)),
+    ("born in 1850", ("current", None)),  # not 19xx/20xx
+])
+def test_classify_query(query, expected):
+    assert classify_query(query) == expected
+
+
+def test_current_returns_newest_value():
+    mem = system()
+    mem.write("Alice is in Lahore.", "t1")
+    mem.write("Alice is in Karachi.", "t2")
+    r = mem.temporal_retriever.search("Alice", 5)
+    assert r["query_type"] == "current"
+    assert r["facts"] == "[CURRENT] Alice | is | in Karachi (step 2)"
+    assert "Lahore" in r["notes"]  # A-Mem's notes are returned unchanged
+
+
+def test_year_query_returns_older_value_when_dated():
+    mem = system(Scripted([ft("Lahore", "2020"), ft("Karachi", "2023")]))
+    mem.write("Alice lives in Lahore since 2020.", "t1")
+    mem.write("Alice lives in Karachi since 2023.", "t2")
+    old = mem.temporal_retriever.search("where did Alice live in 2022", 5)
+    assert old["query_type"] == "historical"
+    assert old["facts"] == "[PAST] Alice | lives_in | Lahore (step 1, replaced at step 2)"
+    new = mem.temporal_retriever.search("where does Alice live in 2024", 5)
+    assert new["facts"] == "[CURRENT] Alice | lives_in | Karachi (step 2)"
+    assert mem.temporal_retriever.search("Alice", 5)["facts"].count("Lahore") == 0
+
+
+def test_historical_without_dates_shows_whole_history():
+    mem = system(Scripted([ft("Lahore"), ft("Karachi")]))
+    mem.write("I live in Lahore.", "t1")
+    mem.write("I live in Karachi.", "t2")
+    facts = mem.temporal_retriever.search("Alice previously", 5)["facts"].splitlines()
+    assert facts == ["[PAST] Alice | lives_in | Lahore (step 1, replaced at step 2)",
+                     "[CURRENT] Alice | lives_in | Karachi (step 2)"]
+    # a year with no dated facts also shows everything
+    assert len(mem.temporal_retriever.search("Alice in 2022", 5)["facts"].splitlines()) == 2
+
+
+def test_retracted_never_appears():
+    mem = system(Scripted([ft("Lahore"), ft("Karachi")]))
+    mem.write("I live in Lahore.", "t1")
+    mem.write("Actually, I live in Karachi.", "t2")  # fake classifier -> CORRECT
+    (lahore, _) = mem.store.fact_history("s0", "alice", "lives_in")
+    assert lahore.status == "retracted"
+    for q in ("Alice", "Alice previously", "Alice in 2022", "Alice used to live"):
+        r = mem.temporal_retriever.search(q, 5)
+        assert "Lahore" not in r["facts"] and "RETRACTED" not in r["facts"], q
+    assert "Karachi" in r["facts"]
+
+
+def test_entity_named_in_query_pulls_in_facts_of_unretrieved_notes():
+    mem = system()
+    mem.write("Nothing to see here.", "t1")
+    mem.store.add_fact(Fact(sample_id="s0", note_id="not-retrieved", entity="Zed",
+                            attribute="works_at", value="Acme", observed_at=7))
+    mem.store.add_fact(Fact(sample_id="s0", note_id="not-retrieved", entity="Bob",
+                            attribute="works_at", value="Initech", observed_at=8))
+    r = mem.temporal_retriever.search("What does zed do?", 5)
+    assert r["facts"] == "[CURRENT] Zed | works_at | Acme (step 7)"
+
+
+def test_multivalued_active_facts_all_kept():
+    mem = system()
+    for i, lang in enumerate(["French", "Urdu"], 1):
+        mem.store.add_fact(Fact(sample_id="s0", note_id="n", entity="Alice",
+                                attribute="speaks", value=lang, observed_at=i))
+    facts = mem.temporal_retriever.search("Alice", 5)["facts"].splitlines()
+    assert len(facts) == 2
+
+
+def test_max_facts_cap():
+    mem = system()
+    mem.temporal_retriever.max_facts = 2
+    for i in range(5):
+        mem.store.add_fact(Fact(sample_id="s0", note_id="n", entity="Alice",
+                                attribute=f"a{i}", value="v", observed_at=i))
+    assert len(mem.temporal_retriever.search("Alice", 5)["facts"].splitlines()) == 2
+
+
+def test_memory_search_hook():
+    mem = system()
+    mem.write("Alice is in Lahore.", "t1")
+    out = mem.search("Alice", 5)
+    assert out["notes"].startswith(FACTS_HEADER + "\n[CURRENT] Alice | is | in Lahore (step 1)\n\n")
+    assert "memory content" in out["notes"] and out["query_type"] == "current"
+    assert mem.store.ops()[-1].op_type == "search"
+    empty = system()
+    assert empty.search("anything", 5)["notes"] == ""  # no notes, no facts: no header
+
+
+def test_amem_search_unchanged():
+    mem = system(name="amem")
+    mem.write("Alice is in Lahore.", "t1")
+    out = mem.search("Alice", 5)
+    assert set(out) == {"notes"} and FACTS_HEADER not in out["notes"]
+    assert not hasattr(mem, "temporal_retriever")
