@@ -101,6 +101,25 @@ OPERATION: <REPLACE | CORRECT | ADD>
 REASON: <one short sentence>"""
 
 
+# llm_only mode: the model also decides ADD_HISTORICAL, and sees every current value.
+UPDATE_CLASSIFY_LLM_ONLY_PROMPT = """A memory already contains this fact:
+  {old_lines}
+A new fact arrives:
+  {entity} | {attribute} | {new_value} (learned at step {new_observed}, session {new_session}, valid from: {new_from}, valid until: {new_until}, tense: {new_tense})
+{extra_context}
+
+Classify how the new fact relates to the fact(s) already in memory:
+- REPLACE: the value changed over time; the new value takes the place of ALL the values listed above, which were true before.
+- CORRECT: the old value(s) were wrong or never true.
+- ADD: both can be true at the same time. Relations such as languages spoken, children, memberships and hobbies can hold several values at once.
+- ADD_HISTORICAL: the new fact is about an EARLIER period than the fact(s) in memory (for example a past job mentioned later). It must not replace them.
+If the relation normally has one value at a time, choose REPLACE, CORRECT or ADD_HISTORICAL; if a person or thing can have several, choose ADD.
+
+Respond using EXACTLY this format:
+OPERATION: <REPLACE | CORRECT | ADD | ADD_HISTORICAL>
+REASON: <one short sentence>"""
+
+
 def attribute_hint(names) -> str:
     """The prompt line offering attribute names already in use ("" if there are none)."""
     if not names:

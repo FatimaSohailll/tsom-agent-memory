@@ -91,6 +91,10 @@ class RunConfig(BaseModel):
     additive_cue: bool = False  # "also"/"as well"/"too" in the sentence -> ADD
     multivalued_attributes: List[str] = ["speaks", "languages", "children", "siblings",
                                          "hobbies", "member_of"]
+    # tsom only: "rules_llm" = deterministic rules first, LLM for what they leave open;
+    # "llm_only" = the LLM decides every differing value (only an empty key -> ADD and
+    # an identical value -> REAFFIRM are settled without it).
+    classifier_mode: Literal["rules_llm", "llm_only"] = "rules_llm"
     temperature_c5: float = 0.5  # A-Mem's default for adversarial questions
     seed: int = 42
     dataset: str = "data/locomo10.json"

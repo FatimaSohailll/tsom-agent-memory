@@ -3,6 +3,7 @@
     python scripts/demo_temporal.py                    # configs/tsom_qwen2.5-3b.json (Ollama)
     python scripts/demo_temporal.py --backend fake     # offline, no model needed
     python scripts/demo_temporal.py --rules off        # multi-valued rules off: the LLM prompt alone decides
+    python scripts/demo_temporal.py --classifier llm_only   # the LLM decides every differing value (no rules)
     python scripts/demo_temporal.py --raw              # also print raw extractor/classifier responses
     python scripts/demo_temporal.py --verbose          # also show library log messages
 
@@ -167,6 +168,7 @@ def load_config(args) -> RunConfig:
     data["run_name"] = "demo_temporal"
     # Set explicitly, whatever the config says: --rules on|off decides.
     data["seed_multivalued"] = data["additive_cue"] = args.rules == "on"
+    data["classifier_mode"] = args.classifier
     if args.backend:
         data["backend"] = args.backend
         if args.backend == "fake" and not args.model:
@@ -183,6 +185,9 @@ def main():
     parser.add_argument("--model", help="override the config's model")
     parser.add_argument("--rules", choices=["on", "off"], default="on",
                         help="on: seed_multivalued and additive_cue enabled (default); off: both disabled")
+    parser.add_argument("--classifier", choices=["rules_llm", "llm_only"], default="rules_llm",
+                        help="rules_llm: deterministic rules first, LLM for the rest (default); "
+                             "llm_only: the LLM decides every differing value (--rules has no effect)")
     parser.add_argument("--raw", action="store_true",
                         help="print the raw extractor and classifier responses")
     parser.add_argument("--verbose", action="store_true", help="show library log messages")
@@ -198,6 +203,7 @@ def main():
         mem = MemorySystem(config, llm, db_path=str(Path(tmp) / "demo_temporal.sqlite"), sample_id="demo")
         probe = Probe(mem, llm)
         header(f"TSOM temporal demo: backend={config.backend} model={config.model} "
+               f"classifier={config.classifier_mode} "
                f"seed_multivalued={config.seed_multivalued} additive_cue={config.additive_cue}")
         run_steps(mem, llm, probe, args.raw)
         report(mem)

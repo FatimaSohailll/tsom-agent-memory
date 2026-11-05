@@ -43,7 +43,7 @@ class MemorySystem:
                 self.store, encode=lambda texts: self.amem.retriever.model.encode(texts))
             self.classifier = UpdateClassifier(
                 llm, self.store, seed_multivalued=config.seed_multivalued,
-                additive_cue=config.additive_cue,
+                additive_cue=config.additive_cue, mode=config.classifier_mode,
                 multivalued_attributes=config.multivalued_attributes)
             self.consolidator = Consolidator(self.store)
             self.observed_counter = 0

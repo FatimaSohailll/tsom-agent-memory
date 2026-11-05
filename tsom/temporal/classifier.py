@@ -11,7 +11,7 @@ from ..contracts import Fact
 from .dates import date_key, effective_start, is_before, key_is_before
 from .normalize import norm
 from .parsers import parse_update_classification
-from .prompts import UPDATE_CLASSIFY_PROMPT
+from .prompts import UPDATE_CLASSIFY_LLM_ONLY_PROMPT, UPDATE_CLASSIFY_PROMPT
 
 log = logging.getLogger("tsom.classifier")
 
@@ -32,7 +32,11 @@ def _stated(value: Optional[str]) -> str:
 class UpdateClassifier:
     def __init__(self, llm, store, temperature: float = 0.0, seed_multivalued: bool = False,
                  additive_cue: bool = False,
-                 multivalued_attributes: Sequence[str] = DEFAULT_MULTIVALUED):
+                 multivalued_attributes: Sequence[str] = DEFAULT_MULTIVALUED,
+                 mode: str = "rules_llm"):
+        if mode not in ("rules_llm", "llm_only"):
+            raise ValueError(f"unknown classifier mode: {mode!r}")
+        self.mode = mode
         self.llm = llm  # anything with get_completion(prompt, temperature) -> str
         self.store = store
         self.temperature = temperature
@@ -72,6 +76,43 @@ class UpdateClassifier:
         for f in old:
             if norm(f.value) == norm(new["value"]):
                 return "REAFFIRM", [f], "same_value", "rule: same value already stored", None
+        if self.mode == "llm_only":
+            result = self._ask_llm_only(old, new, observed_at, observed_time)
+            if result is not None:
+                return result
+            # Two unparseable replies: fall back to the rule-based path rather than guess.
+            op, old, source, reason, raw = self._classify_rules(old, new, observed_at, observed_time)
+            return op, old, f"fallback:{source}", reason, raw
+        return self._classify_rules(old, new, observed_at, observed_time)
+
+    def _ask_llm_only(self, old, new, observed_at, observed_time):
+        """Ask the model (retrying once on unparseable output). None if it never answers."""
+        prompt = UPDATE_CLASSIFY_LLM_ONLY_PROMPT.format(
+            **self._prompt_fields(old, new, observed_at, observed_time))
+        for _ in range(2):
+            raw = self.llm.get_completion(prompt, self.temperature)
+            log.debug("classifier (llm_only) raw response for %s | %s | %s: %r",
+                      new["entity"], new["attribute"], new["value"], raw)
+            op, reason = parse_update_classification(
+                raw, allowed=("REPLACE", "CORRECT", "ADD", "ADD_HISTORICAL"), default=None)
+            if op is not None:
+                return op, old, "LLM", reason or "(no reason given)", raw
+        return None
+
+    @staticmethod
+    def _prompt_fields(old, new, observed_at, observed_time) -> dict:
+        return dict(
+            old_lines="\n  ".join(
+                f"{f.entity} | {f.attribute} | {f.value} (learned at step {f.observed_at}, "
+                f"session {f.observed_time or 'unknown'}, valid from: {_stated(f.valid_from)}, "
+                f"valid until: {_stated(f.valid_until)})" for f in old),
+            entity=new["entity"], attribute=new["attribute"], new_value=new["value"],
+            new_observed=observed_at, new_session=observed_time or "unknown",
+            new_from=_stated(new.get("valid_from")), new_until=_stated(new.get("valid_until")),
+            new_tense=new.get("temporal_status") or "UNKNOWN",
+            extra_context=new.get("source_text") or "")
+
+    def _classify_rules(self, old, new, observed_at, observed_time):
 
         new_from = new.get("valid_from")
         new_key = date_key(new_from)
@@ -99,15 +140,7 @@ class UpdateClassifier:
                 "rule: the sentence adds a value and says nothing changed", None
 
         prompt = UPDATE_CLASSIFY_PROMPT.format(
-            old_lines="\n  ".join(
-                f"{f.entity} | {f.attribute} | {f.value} (learned at step {f.observed_at}, "
-                f"session {f.observed_time or 'unknown'}, valid from: {_stated(f.valid_from)}, "
-                f"valid until: {_stated(f.valid_until)})" for f in old),
-            entity=new["entity"], attribute=new["attribute"], new_value=new["value"],
-            new_observed=observed_at, new_session=observed_time or "unknown",
-            new_from=_stated(new_from), new_until=_stated(new.get("valid_until")),
-            new_tense=new.get("temporal_status") or "UNKNOWN",
-            extra_context=new.get("source_text") or "")
+            **self._prompt_fields(old, new, observed_at, observed_time))
         raw = self.llm.get_completion(prompt, self.temperature)
         log.debug("classifier raw response for %s | %s | %s: %r",
                   new["entity"], new["attribute"], new["value"], raw)

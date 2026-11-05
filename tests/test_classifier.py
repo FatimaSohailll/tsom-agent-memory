@@ -150,3 +150,76 @@ def test_dates():
 def test_parse_reason():
     assert parse_update_classification("OPERATION: CORRECT\nREASON: it was wrong") == (
         "CORRECT", "it was wrong")
+
+
+# ---- classifier_mode = "llm_only" ----
+
+class Scripted:
+    def __init__(self, *responses):
+        self.responses, self.prompts = list(responses), []
+
+    def get_completion(self, prompt, temperature=0.7):
+        self.prompts.append(prompt)
+        return self.responses.pop(0) if len(self.responses) > 1 else self.responses[0]
+
+
+def test_llm_only_still_skips_llm_when_nothing_to_decide():
+    store = Store()
+    c = UpdateClassifier(NoLLM(), store, mode="llm_only")
+    assert c.classify("s0", new(), 1) == ("ADD", [])            # empty key
+    seed(store, "Lahore")
+    assert c.classify("s0", new("lahore"), 2)[0] == "REAFFIRM"  # identical value
+
+
+def test_llm_only_asks_even_where_rules_would_decide():
+    store = Store()
+    a = seed(store, "Lahore", 5, valid_from="2022")
+    llm = Scripted("OPERATION: ADD_HISTORICAL\nREASON: earlier period")
+    c = UpdateClassifier(llm, store, mode="llm_only")
+    op, old = c.classify("s0", new("Paris", valid_from="2019"), 6)  # rules: ADD_HISTORICAL, no LLM
+    assert op == "ADD_HISTORICAL" and [f.fact_id for f in old] == [a.fact_id]
+    assert c.last_decision["source"] == "LLM" and len(llm.prompts) == 1
+    assert "ADD_HISTORICAL" in llm.prompts[0]
+
+
+def test_llm_only_ignores_learned_multivalued_rule():
+    store = Store()
+    seed(store, "Lahore", 1)
+    seed(store, "Karachi", 2)
+    llm = Scripted("OPERATION: REPLACE\nREASON: moved")
+    c = UpdateClassifier(llm, store, mode="llm_only")
+    op, old = c.classify("s0", new("Paris"), 3)
+    assert op == "REPLACE" and len(old) == 2 and len(llm.prompts) == 1
+    assert "Lahore" in llm.prompts[0] and "Karachi" in llm.prompts[0]
+
+
+def test_llm_only_retries_once_on_unparseable():
+    store = Store()
+    seed(store)
+    llm = Scripted("garbage", "OPERATION: CORRECT\nREASON: wrong")
+    c = UpdateClassifier(llm, store, mode="llm_only")
+    assert c.classify("s0", new(), 2)[0] == "CORRECT" and len(llm.prompts) == 2
+
+
+def test_llm_only_falls_back_to_rules_after_two_failures():
+    store = Store()
+    seed(store, "Lahore", 5, valid_from="2022")
+    llm = Scripted("garbage")
+    c = UpdateClassifier(llm, store, mode="llm_only")
+    op, _ = c.classify("s0", new("Paris", valid_from="2019"), 6)
+    assert op == "ADD_HISTORICAL"                       # the date rule decided
+    assert c.last_decision["source"] == "fallback:valid_from_earlier"
+    assert len(llm.prompts) == 2
+
+
+def test_parse_add_historical_only_when_allowed():
+    allowed = ("REPLACE", "CORRECT", "ADD", "ADD_HISTORICAL")
+    assert parse_update_classification("OPERATION: ADD_HISTORICAL\nREASON: x", allowed)[0] == "ADD_HISTORICAL"
+    assert parse_update_classification("OPERATION: ADD\nREASON: x", allowed)[0] == "ADD"
+    assert parse_update_classification("OPERATION: ADD_HISTORICAL\nREASON: x")[0] == "REPLACE"  # default set
+    assert parse_update_classification("nonsense", allowed, default=None) == (None, "")
+
+
+def test_unknown_mode_rejected():
+    with pytest.raises(ValueError):
+        UpdateClassifier(NoLLM(), Store(), mode="nope")

@@ -90,20 +90,23 @@ _OPERATION = re.compile(r"^[\s*\-•>#]*[*_`]*OPERATION[*_`]*\s*:[*_`]*\s*(.*)$"
 _REASON = re.compile(r"^[\s*\-•>#]*[*_`]*REASON[*_`]*\s*:[*_`]*\s*(.*)$", re.IGNORECASE)
 
 
-def parse_update_classification(response: str) -> tuple:
+def parse_update_classification(response: str, allowed=("REPLACE", "CORRECT", "ADD"),
+                                default: Optional[str] = "REPLACE") -> tuple:
     """Parse "OPERATION: ... / REASON: ..." into (operation, reason).
 
-    operation is REPLACE, CORRECT or ADD; anything unparseable gives REPLACE.
+    operation is one of `allowed` (longest name first, so ADD_HISTORICAL is not read
+    as ADD); anything unparseable gives `default` (None means "could not parse").
     Only the OPERATION line is read for the decision, so words in REASON
     cannot change it.
     """
-    op, reason = "REPLACE", ""
+    op, reason = default, ""
+    names = "|".join(sorted(allowed, key=len, reverse=True))
     try:
         found = False
         for line in (response or "").splitlines():
             m = _OPERATION.match(line)
             if m and not found:
-                tok = re.search(r"\b(REPLACE|CORRECT|ADD)\b", m.group(1), re.IGNORECASE)
+                tok = re.search(r"(?<![A-Za-z_])(" + names + r")(?![A-Za-z_])", m.group(1), re.IGNORECASE)
                 if tok:
                     op, found = tok.group(1).upper(), True
                 continue
@@ -111,5 +114,5 @@ def parse_update_classification(response: str) -> tuple:
             if m:
                 reason = _clean(m.group(1))
     except Exception:
-        return "REPLACE", ""
+        return default, ""
     return op, reason
