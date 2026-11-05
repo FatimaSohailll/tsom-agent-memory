@@ -78,6 +78,56 @@ def test_historical_without_dates_shows_whole_history():
     assert len(mem.temporal_retriever.search("Alice in 2022", 5)["facts"].splitlines()) == 2
 
 
+JANUARY, JUNE, OCTOBER = ("1:56 pm on 8 January, 2023", "6:30 pm on 14 June, 2023",
+                          "9:00 am on 2 October, 2023")
+
+
+def moved_twice():
+    mem = system(Scripted([ft("Karachi"), ft("Lahore"), ft("Dubai")]))
+    mem.write("I live in Karachi.", JANUARY)
+    mem.write("I moved to Lahore.", JUNE)
+    mem.write("I moved to Dubai.", OCTOBER)
+    return mem
+
+
+def values(mem, query):
+    return [line.split(" | ")[2].split(" (")[0] for line in
+            mem.temporal_retriever.search(query, 5)["facts"].splitlines()]
+
+
+@pytest.mark.parametrize("query,expected", [
+    ("where did Alice live in March 2023", ["Karachi"]),
+    ("where did Alice live in July 2023", ["Lahore"]),
+    ("where did Alice live in November 2023", ["Dubai"]),
+])
+def test_session_dates_place_replaced_facts_in_time(query, expected):
+    assert values(moved_twice(), query) == expected
+
+
+def test_the_month_of_a_change_shows_both_values():
+    assert values(moved_twice(), "where did Alice live in June 2023") == ["Karachi", "Lahore"]
+
+
+def test_the_first_value_has_no_invented_start():
+    # Learning something in 2023 does not mean it began then.
+    assert values(moved_twice(), "where did Alice live in 2020") == ["Karachi"]
+
+
+def test_session_dates_are_compared_but_never_written():
+    mem = moved_twice()
+    mem.temporal_retriever.search("where did Alice live in March 2023", 5)
+    for fact in mem.store.fact_history("s0", "Alice", "lives_in"):
+        assert fact.valid_from is None and fact.valid_until is None
+
+
+def test_a_stated_end_date_wins_over_the_session_date():
+    mem = system(Scripted([ft("Karachi", end="2022"), ft("Lahore")]))
+    mem.write("I lived in Karachi until 2022.", JANUARY)
+    mem.write("I moved to Lahore.", JUNE)
+    assert values(mem, "where did Alice live in March 2021") == ["Karachi"]
+    assert values(mem, "where did Alice live in March 2023") == []  # after 2022, before June
+
+
 def test_retracted_never_appears():
     mem = system(Scripted([ft("Lahore"), ft("Karachi")]))
     mem.write("I live in Lahore.", "t1")

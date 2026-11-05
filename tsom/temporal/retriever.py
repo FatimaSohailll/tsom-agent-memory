@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Set, Tuple
 import numpy as np
 
 from ..contracts import Fact
-from .dates import date_key
+from .dates import date_key, effective_start
 from .normalize import norm
 
 _YEAR = re.compile(r"\b(19|20)\d{2}\b")
@@ -52,10 +52,21 @@ def _cmp(a: tuple, b: tuple) -> int:
     return (a[:k] > b[:k]) - (a[:k] < b[:k])
 
 
-def _outside(target: tuple, fact: Fact) -> bool:
-    """True only if `target` is provably outside [valid_from, valid_until).
-    Unstated or unparseable bounds are open."""
+def _bounds(fact: Fact, by_id: Dict[str, Fact]) -> Tuple[Optional[tuple], Optional[tuple]]:
+    """When `fact` held: its stated dates, else the moment a replacement took over.
+    A session date only bounds a replacement, and is only compared, never stored.
+    A first value has no invented start: learning it in 2023 does not mean it began then."""
     start, end = date_key(fact.valid_from), date_key(fact.valid_until)
+    if start is None and fact.supersedes:
+        start = effective_start(fact)
+    if end is None and fact.superseded_by in by_id:
+        end = effective_start(by_id[fact.superseded_by])
+    return start, end
+
+
+def _outside(target: tuple, start: Optional[tuple], end: Optional[tuple]) -> bool:
+    """True only if `target` is provably outside [start, end).
+    Unknown bounds are open."""
     if start is not None and _cmp(target, start) < 0:
         return True
     if end is not None:
@@ -143,10 +154,11 @@ class TemporalRetriever:
         if query_type == "current":
             return [f for f in live if f.status == "active"]
         key = date_key(target) if target else None
-        dated = any(date_key(f.valid_from) or date_key(f.valid_until) for f in live)
-        if key is None or not dated:
+        by_id = {f.fact_id: f for f in history}
+        bounds = {f.fact_id: _bounds(f, by_id) for f in live}
+        if key is None or not any(start or end for start, end in bounds.values()):
             return live  # no way to place it in time: show the whole history
-        return [f for f in live if not _outside(key, f)]
+        return [f for f in live if not _outside(key, *bounds[f.fact_id])]
 
     @staticmethod
     def _format(store, sid: str, f: Fact) -> str:
