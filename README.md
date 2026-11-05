@@ -81,6 +81,19 @@ python -m harness.run_locomo --config configs/rag_qwen2.5-3b.json --set max_samp
 
 To use a different model, pick another config (`configs/amem_llama3.2-3b.json`, or `configs/amem_gpt-4o-mini.json` with `OPENAI_API_KEY` set) or override fields: `--set model=llama3.2:3b run_name=my_run`.
 
+### Repeatable runs
+
+Two config fields control this, and both are off by default, so A-Mem's own settings stay in place:
+
+- `temperature`: every LLM call uses this value, including A-Mem's own calls. Leave it unset to reproduce A-Mem's numbers.
+- `send_seed`: also sends `seed` to the model.
+
+```bash
+python -m harness.run_factcons --config configs/tsom_qwen2.5-3b.json --variant sh --set temperature=0 seed=1 send_seed=true run_name=tsom_sh_t0_s1
+```
+
+Each run saves these values in `config.json`.
+
 ### What a run produces
 
 Everything goes to `results/<run_name>/`:

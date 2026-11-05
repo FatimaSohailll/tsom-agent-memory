@@ -96,7 +96,7 @@ def run(config: RunConfig, variant: str, size: str = "6k", chunk: int = 20,
     if samples is None:
         samples = load_samples(variant, size)
     samples = samples[: config.max_samples]
-    llm = LLM(config.backend, config.model, config.base_url)
+    llm = LLM.from_config(config)
     llm.check()
 
     rows, ops = [], []

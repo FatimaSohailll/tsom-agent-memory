@@ -96,7 +96,10 @@ class RunConfig(BaseModel):
     # an identical value -> REAFFIRM are settled without it).
     classifier_mode: Literal["rules_llm", "llm_only"] = "rules_llm"
     temperature_c5: float = 0.5  # A-Mem's default for adversarial questions
+    # If set, every LLM call uses this, including A-Mem's. None keeps each call's own value.
+    temperature: Optional[float] = None
     seed: int = 42
+    send_seed: bool = False  # also send seed to the model, not just to the answer-order shuffle
     dataset: str = "data/locomo10.json"
     max_samples: Optional[int] = None  # None = all 10 conversations
     max_sessions: Optional[int] = None  # None = every session

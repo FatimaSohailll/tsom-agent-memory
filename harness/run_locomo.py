@@ -38,7 +38,7 @@ def run(config: RunConfig) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     (out / "config.json").write_text(config.model_dump_json(indent=2))
 
-    llm = LLM(config.backend, config.model, config.base_url)
+    llm = LLM.from_config(config)
     llm.check()
     dataset = Path(config.dataset)
     if not dataset.is_absolute() and not dataset.exists():

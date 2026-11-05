@@ -36,10 +36,13 @@ class Usage:
 
 
 class LLM:
-    def __init__(self, backend: str, model: str, base_url: str | None = None, retries: int = 2):
+    def __init__(self, backend: str, model: str, base_url: str | None = None, retries: int = 2,
+                 temperature: float | None = None, seed: int | None = None):
         self.backend = backend
         self.model = model
         self.retries = retries
+        self.temperature = temperature  # if set, replaces every caller's temperature
+        self.seed = seed  # if set, sent with every request
         self.usage = Usage()
         if backend == "openai":
             from openai import OpenAI
@@ -56,7 +59,14 @@ class LLM:
         else:
             raise ValueError(f"unknown backend {backend}")
 
+    @classmethod
+    def from_config(cls, config) -> "LLM":
+        return cls(config.backend, config.model, config.base_url, temperature=config.temperature,
+                   seed=config.seed if config.send_seed else None)
+
     def get_completion(self, prompt: str, temperature: float = 0.7) -> str:
+        if self.temperature is not None:  # also covers A-Mem's calls, which set their own
+            temperature = self.temperature
         start = time.perf_counter()
         for attempt in range(self.retries + 1):
             try:
@@ -83,13 +93,17 @@ class LLM:
         messages = [{"role": "system", "content": SYSTEM_MESSAGE},
                     {"role": "user", "content": prompt}]
         if self.backend in ("openai", "vllm"):
+            extra = {} if self.seed is None else {"seed": self.seed}
             r = self.client.chat.completions.create(model=self.model, messages=messages,
-                                                    temperature=temperature, max_tokens=MAX_TOKENS)
+                                                    temperature=temperature, max_tokens=MAX_TOKENS,
+                                                    **extra)
             u = r.usage
             return r.choices[0].message.content or "", u.prompt_tokens if u else 0, u.completion_tokens if u else 0
         if self.backend == "ollama":
-            r = self.client.chat(model=self.model, messages=messages,
-                                 options={"temperature": temperature, "num_predict": MAX_TOKENS})
+            options = {"temperature": temperature, "num_predict": MAX_TOKENS}
+            if self.seed is not None:
+                options["seed"] = self.seed
+            r = self.client.chat(model=self.model, messages=messages, options=options)
             return r["message"]["content"], r.get("prompt_eval_count") or 0, r.get("eval_count") or 0
         return fake_completion(prompt), len(prompt.split()), 5
 
