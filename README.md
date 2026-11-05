@@ -109,6 +109,8 @@ If a run stops halfway, run the same command again. Finished conversations are s
 
 FactConsolidation is scored by substring-match accuracy and F1 (`harness/factcons_answer.py`), with the same answer prompt and retrieval call for every memory system.
 
+The stale-answer rate is the share of questions whose fact changed that got a wrong answer matching an older value of that fact. The dataset gives only the newest answer, so older values are read from the numbered facts. On multi-hop questions the rate is an estimate: it counts stale values of the last fact only, so a stale earlier step that leads to a different answer is missed.
+
 We follow A-Mem's own LoCoMo evaluation: all 10 conversations, all five question categories, F1 and BLEU-1, the same answer prompts and the same retrieval k. The baseline uses A-Mem's released reproduction code without changes, so our A-Mem numbers can be checked against Table 1 of their paper for the same model.
 
 ## Results

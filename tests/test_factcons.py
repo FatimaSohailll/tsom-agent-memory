@@ -3,7 +3,8 @@ import json
 import pytest
 
 from harness.factcons_answer import (ANSWER_PROMPT, answer_question, clean_prediction,
-                                     normalize_answer, score, substring_match)
+                                     mark_stale, normalize_answer, older_values, score,
+                                     substring_match)
 from harness.run_factcons import chunk_facts, load_samples, run, run_sample
 from tsom.contracts import RunConfig
 from tsom.llm import LLM
@@ -123,3 +124,71 @@ def test_run_end_to_end_and_resume(system, tmp_path):
     assert {"question", "gold", "prediction", "correct", "f1"} <= set(first_row)
     again = run(config, "sh", "6k", chunk=3, samples=load_samples("sh", "6k", loader=lambda: ROWS))
     assert again == summary  # finished sample skipped; summary rebuilt from disk
+
+
+CAPITAL = [(0, "The capital of France is Rome."), (1, "Bob was born in the city of Lyon."),
+           (2, "The capital of France is Paris."), (3, "Bob was born in the city of Paris.")]
+
+
+def test_older_values_are_earlier_values_of_the_same_fact():
+    question = "What is the capital of France?"
+    assert older_values(CAPITAL, question, ["Paris"]) == ["Rome"]
+    assert older_values(CAPITAL, "Where was Bob born?", ["Paris"]) == ["Lyon"]
+
+
+def test_multi_hop_keeps_every_fact_ending_in_the_answer():
+    found = older_values(CAPITAL, "Where was the spouse of Ann born?", ["Paris"], closest=False)
+    assert found == ["Lyon", "Rome"]
+
+
+def test_a_fact_that_never_changed_has_no_older_value():
+    assert older_values([(0, "Dan is in Oslo.")], "Where is Dan?", ["Oslo"]) == []
+
+
+def test_an_answer_that_is_not_the_newest_value_has_no_older_value():
+    assert older_values(CAPITAL, "What is the capital of France?", ["Rome"]) == []
+
+
+def test_older_values_match_whole_words():
+    facts = [(0, "The home of Al is Oslo."), (1, "Albania is in Europe.")]
+    assert older_values(facts, "Where is Al?", ["Al"]) == []
+
+
+@pytest.mark.parametrize("prediction,stale", [("Rome", True), ("rome.", True), ("Paris", False),
+                                              ("Madrid", False), ("", False)])
+def test_only_a_wrong_answer_with_an_older_value_is_stale(prediction, stale):
+    row = {"question": "What is the capital of France?", "gold": ["Paris"], "prediction": prediction,
+           **score(prediction, ["Paris"])}
+    marked = mark_stale(row, {"tag": "sh_6k", "facts": CAPITAL})
+    assert marked["older"] == ["Rome"] and marked["stale"] is stale
+
+
+def test_summary_counts_stale_answers_and_keeps_them_on_resume(tmp_path, monkeypatch):
+    replies = iter(["Lahore", "Paris", "Oslo"])
+    monkeypatch.setattr("harness.run_factcons.answer_question", lambda *a, **k: {
+        "prediction": next(replies), "context": "", "prompt_tokens": 0, "completion_tokens": 0})
+    config = cfg("rag", tmp_path, max_samples=1)
+    samples = load_samples("sh", "6k", loader=lambda: ROWS)
+    summary = run(config, "sh", "6k", chunk=3, samples=samples)
+    assert summary["stale"] == {"changed_questions": 2, "stale_answers": 1, "stale_rate": 0.5}
+    assert summary["per_sample"]["sh_6k"]["stale_answers"] == 1
+    assert "1 of 2" in (tmp_path / "fc_rag" / "summary_factcons_sh_6k.md").read_text()
+    assert run(config, "sh", "6k", chunk=3, samples=samples) == summary
+
+
+def test_rows_saved_before_stale_scoring_are_marked_on_resume(tmp_path, monkeypatch):
+    monkeypatch.setattr("harness.run_factcons.answer_question", lambda *a, **k: {
+        "prediction": "Lahore", "context": "", "prompt_tokens": 0, "completion_tokens": 0})
+    config = cfg("rag", tmp_path, max_samples=1, max_questions=1)
+    samples = load_samples("sh", "6k", loader=lambda: ROWS)
+    run(config, "sh", "6k", chunk=3, samples=samples)
+    saved = tmp_path / "fc_rag" / "sample_sh_6k.jsonl"
+    row = json.loads(saved.read_text())
+    saved.write_text(json.dumps({k: v for k, v in row.items() if k not in ("older", "stale")}) + "\n")
+    assert run(config, "sh", "6k", chunk=3, samples=samples)["stale"]["stale_answers"] == 1
+
+
+def test_multi_hop_summary_is_labelled_an_estimate(tmp_path):
+    config = cfg("rag", tmp_path, max_samples=1, max_questions=1)
+    run(config, "mh", "6k", chunk=3, samples=load_samples("mh", "6k", loader=lambda: ROWS))
+    assert "estimate" in (tmp_path / "fc_rag" / "summary_factcons_mh_6k.md").read_text()
