@@ -17,7 +17,7 @@ from .store import Store
 from .temporal.classifier import UpdateClassifier
 from .temporal.consolidator import Consolidator
 from .temporal.attributes import AttributeCanonicalizer
-from .temporal.extractor import FactExtractor
+from .temporal.extractor import FactExtractor, split_turn
 from .temporal.retriever import TemporalRetriever
 from .temporal.serial import split_serial_facts
 
@@ -106,12 +106,14 @@ class MemorySystem:
         counts_before = self.classifier.op_counts.copy()
         start = time.perf_counter()
         serials = split_serial_facts(content)
+        speaker, turn = split_turn(content)  # the note keeps A-Mem's format; facts do not
         failures = 0
 
         # Extract facts; numbered lines carry their own serial as observed_at.
         items = []  # (new fact dict, observed_at)
         try:
-            hint = self.attributes.known_attributes(sid, content)  # names to reuse
+            # names to reuse; the speaker's own count, though the turn may not name them
+            hint = self.attributes.known_attributes(sid, f"{speaker} {turn}" if speaker else turn)
             if serials:
                 facts = self.extractor.extract_batch([text for _, text in serials], hint)
                 for f in sorted(facts, key=lambda f: f["source"]):
@@ -119,9 +121,9 @@ class MemorySystem:
                     self.observed_counter = max(self.observed_counter, serial)
                     items.append(({**f, "source_text": text}, serial))
             else:
-                for f in self.extractor.extract(content, hint):
+                for f in self.extractor.extract(turn, hint, speaker):
                     self.observed_counter += 1
-                    items.append(({**f, "source_text": content}, self.observed_counter))
+                    items.append(({**f, "source_text": turn}, self.observed_counter))
         except Exception as e:
             failures += 1
             log.warning("temporal extraction failed for note %s (%r): %s",
