@@ -56,13 +56,13 @@ class UpdateClassifier:
         optional valid_from, temporal_status and source_text (the sentence it came
         from). `observed_time` is the session date the new fact was learned in.
 
-        op is ADD, REAFFIRM, REPLACE, CORRECT or ADD_HISTORICAL. old_facts are
-        the existing facts the op touches: [] for a first ADD; for an ADD next to
-        existing facts they are those facts, which stay active; the matching fact
-        for REAFFIRM; all current facts for the key for REPLACE, CORRECT and
-        ADD_HISTORICAL. Deterministic rules decide first (no LLM call); the LLM is
-        asked only for a differing value that no rule settles.
-        self.last_decision says which.
+        op is ADD, REAFFIRM, REPLACE, CORRECT, ADD_HISTORICAL or UNRESOLVED (the
+        LLM's reply could not be read). old_facts are the existing facts the op
+        touches: [] for a first ADD; for an ADD next to existing facts they are
+        those facts, which stay active; the matching fact for REAFFIRM; all current
+        facts for the key for REPLACE, CORRECT, ADD_HISTORICAL and UNRESOLVED.
+        Deterministic rules decide first (no LLM call); the LLM is asked only for a
+        differing value that no rule settles. self.last_decision says which.
         """
         op, old, source, reason, raw = self._classify(sample_id, new, observed_at, observed_time)
         self.last_decision = {"op": op, "source": source, "reason": reason, "raw": raw}
@@ -145,4 +145,6 @@ class UpdateClassifier:
         log.debug("classifier raw response for %s | %s | %s: %r",
                   new["entity"], new["attribute"], new["value"], raw)
         op, reason = parse_update_classification(raw)
+        if op is None:
+            return "UNRESOLVED", old, "LLM", "the reply could not be read", raw
         return op, old, "LLM", reason or "(no reason given)", raw

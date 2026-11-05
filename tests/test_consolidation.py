@@ -1,3 +1,4 @@
+from harness.run_locomo import cost_summary
 from tsom.contracts import Fact, RunConfig
 from tsom.llm import LLM
 from tsom.memory import MemorySystem
@@ -289,3 +290,23 @@ def test_tsom_run_reports_temporal_cost(tmp_path):
     assert cost["temporal_writes"] == cost["writes"] > 0
     assert cost["total_llm_calls_per_write"] > cost["llm_calls_per_write"]
     assert "Per memory write" in (tmp_path / "tsom_smoke" / "summary.md").read_text()
+
+
+class Unreadable(Scripted):
+    """Scripted extraction; the update classifier's reply cannot be parsed."""
+
+    def get_completion(self, prompt, temperature=0.7):
+        if prompt.startswith("A memory already contains this fact:"):
+            self.usage.calls += 1
+            return "sorry, I am not sure"
+        return super().get_completion(prompt, temperature)
+
+
+def test_unresolved_keeps_the_old_fact_and_is_counted():
+    mem = system(Unreadable(facts=[fact_text("Lahore"), fact_text("Karachi")]))
+    mem.write("I live in Lahore.", "t1")
+    mem.write("I live in Karachi.", "t2")
+    assert [(f.value, f.status) for f in mem.store.fact_history("s0", "Alice", "lives_in")] == [("Lahore", "active")]
+    ops = [op.model_dump() for op in mem.store.ops()]
+    assert ops[-1]["op_counts"] == {"UNRESOLVED": 1} and ops[-1]["failures"] == 0
+    assert cost_summary([], ops)["fact_ops"] == {"ADD": 1, "UNRESOLVED": 1}

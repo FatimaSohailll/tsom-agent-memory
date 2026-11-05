@@ -91,7 +91,7 @@ _REASON = re.compile(r"^[\s*\-•>#]*[*_`]*REASON[*_`]*\s*:[*_`]*\s*(.*)$", re.I
 
 
 def parse_update_classification(response: str, allowed=("REPLACE", "CORRECT", "ADD"),
-                                default: Optional[str] = "REPLACE") -> tuple:
+                                default: Optional[str] = None) -> tuple:
     """Parse "OPERATION: ... / REASON: ..." into (operation, reason).
 
     operation is one of `allowed` (longest name first, so ADD_HISTORICAL is not read
