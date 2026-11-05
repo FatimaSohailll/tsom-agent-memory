@@ -3,7 +3,7 @@ import pytest
 from tsom.contracts import Fact, RunConfig
 from tsom.llm import LLM
 from tsom.memory import FACTS_HEADER, MemorySystem
-from tsom.temporal.retriever import classify_query
+from tsom.temporal.retriever import TemporalRetriever, classify_query
 
 
 class Scripted(LLM):
@@ -117,6 +117,38 @@ def test_max_facts_cap():
         mem.store.add_fact(Fact(sample_id="s0", note_id="n", entity="Alice",
                                 attribute=f"a{i}", value="v", observed_at=i))
     assert len(mem.temporal_retriever.search("Alice", 5)["facts"].splitlines()) == 2
+
+
+def add(mem, entity, attribute, value, step, **fields):
+    fact = Fact(sample_id="s0", note_id="n", entity=entity, attribute=attribute,
+                value=value, observed_at=step, **fields)
+    mem.store.add_fact(fact)
+    return fact
+
+
+def test_cap_keeps_the_fact_closest_to_the_query():
+    mem = system()
+    mem.temporal_retriever.max_facts = 1
+    add(mem, "Bob", "likes", "tea", 1)
+    add(mem, "Bob", "plays", "chess", 2)
+    add(mem, "Zed", "born_in", "Paris", 3)
+    facts = mem.temporal_retriever.search("where was zed born and not bob", 5)["facts"]
+    assert facts == "[CURRENT] Zed | born_in | Paris (step 3)"
+
+
+def test_cap_keeps_the_newest_line_of_a_history():
+    mem = system()
+    mem.temporal_retriever.max_facts = 1
+    new = add(mem, "Alice", "lives_in", "Karachi", 2)
+    add(mem, "Alice", "lives_in", "Lahore", 1, status="superseded", superseded_by=new.fact_id)
+    facts = mem.temporal_retriever.search("Alice previously", 5)["facts"]
+    assert facts == "[CURRENT] Alice | lives_in | Karachi (step 2)"
+
+
+def test_select_breaks_score_ties_with_the_named_entity():
+    groups = {("a", "x"): ["a1"], ("b", "x"): ["b1"]}
+    scores = {("a", "x"): 0.5, ("b", "x"): 0.5}
+    assert TemporalRetriever._select(groups, scores, {("b", "x")}, 1) == ["b1"]
 
 
 def test_memory_search_hook():

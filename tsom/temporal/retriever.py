@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
+
+import numpy as np
 
 from ..contracts import Fact
 from .dates import date_key
@@ -39,6 +41,12 @@ def classify_query(query: str) -> Tuple[str, Optional[str]]:
     return "historical", f"{target}-{month_no:02d}" if month_no else target
 
 
+def _unit(vector) -> np.ndarray:
+    vector = np.asarray(vector, dtype=float)
+    length = np.linalg.norm(vector)
+    return vector / length if length else vector
+
+
 def _cmp(a: tuple, b: tuple) -> int:
     k = min(len(a), len(b))
     return (a[:k] > b[:k]) - (a[:k] < b[:k])
@@ -61,6 +69,7 @@ class TemporalRetriever:
     def __init__(self, memory, max_facts: int = 30):
         self.memory = memory  # a MemorySystem
         self.max_facts = max_facts
+        self._vectors: Dict[str, np.ndarray] = {}  # fact_id -> unit embedding
 
     def search(self, query: str, k: int) -> dict:
         amem = self.memory.amem
@@ -81,19 +90,52 @@ class TemporalRetriever:
             if key not in groups:
                 groups[key] = store.fact_history(sid, f.entity, f.attribute)
         q = query.lower()
+        named: Set[Tuple[str, str]] = set()
         for entity in store.entity_keys(sid):
             if len(entity) >= 2 and re.search(r"(?<!\w)" + re.escape(entity) + r"(?!\w)", q):
                 for f in store.entity_facts(sid, entity):
-                    groups.setdefault((norm(f.entity), norm(f.attribute)), [])
-                    if f.fact_id not in {g.fact_id for g in groups[(norm(f.entity), norm(f.attribute))]}:
-                        groups[(norm(f.entity), norm(f.attribute))].append(f)
+                    key = (norm(f.entity), norm(f.attribute))
+                    named.add(key)
+                    groups.setdefault(key, [])
+                    if f.fact_id not in {g.fact_id for g in groups[key]}:
+                        groups[key].append(f)
 
-        lines: List[str] = []
-        for history in groups.values():
-            history = sorted(history, key=lambda f: f.observed_at)
-            lines += [self._format(store, sid, f) for f in self._filter(history, query_type, target)]
-        return {"notes": notes_str, "facts": "\n".join(lines[: self.max_facts]),
-                "query_type": query_type}
+        shown: Dict[Tuple[str, str], List[Fact]] = {}
+        for key, history in groups.items():
+            kept = self._filter(sorted(history, key=lambda f: f.observed_at), query_type, target)
+            if kept:
+                shown[key] = kept
+        lines = {key: [self._format(store, sid, f) for f in facts] for key, facts in shown.items()}
+        if sum(map(len, lines.values())) > self.max_facts:
+            kept_lines = self._select(lines, self._scores(query, shown), named, self.max_facts)
+        else:
+            kept_lines = [line for group in lines.values() for line in group]
+        return {"notes": notes_str, "facts": "\n".join(kept_lines), "query_type": query_type}
+
+    def _scores(self, query: str, shown: Dict[Tuple[str, str], List[Fact]]) -> Dict[Tuple[str, str], float]:
+        """Each group's best cosine similarity to the query, with the embedder A-Mem uses."""
+        encode = self.memory.amem.retriever.model.encode
+        missing = [f for facts in shown.values() for f in facts if f.fact_id not in self._vectors]
+        if missing:
+            texts = [f"{f.entity} {f.attribute} {f.value}".replace("_", " ") for f in missing]
+            for f, vector in zip(missing, encode(texts)):
+                self._vectors[f.fact_id] = _unit(vector)
+        target = _unit(encode([query])[0])
+        return {key: max(float(self._vectors[f.fact_id] @ target) for f in facts)
+                for key, facts in shown.items()}
+
+    @staticmethod
+    def _select(lines: Dict[Tuple[str, str], List[str]], scores: Dict[Tuple[str, str], float],
+                named: Set[Tuple[str, str]], limit: int) -> List[str]:
+        """The best-scoring groups' lines, at most `limit`; a named entity wins a tie.
+        A group that no longer fits keeps its newest lines."""
+        kept: List[str] = []
+        for key in sorted(lines, key=lambda key: (-scores[key], key not in named)):
+            room = limit - len(kept)
+            if room <= 0:
+                break
+            kept += lines[key][-room:]
+        return kept
 
     @staticmethod
     def _filter(history: List[Fact], query_type: str, target: Optional[str]) -> List[Fact]:
