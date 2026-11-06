@@ -165,6 +165,29 @@ class Store:
         if cur.rowcount == 0:
             raise KeyError(f"unknown fact_id: {fact_id}")
 
+    def revert_supersession(self, fact_id: str) -> List[Fact]:
+        """Undo the REPLACE or CORRECT that created `fact_id`: its old facts are current
+        again and it is retracted. No row is deleted. Returns the restored facts.
+
+        Only a fact that is still active can be undone. Reverting anything older would
+        bring back a value that a later step has already moved on from.
+        """
+        fact = self.get_fact(fact_id)
+        if fact is None:
+            raise KeyError(f"unknown fact_id: {fact_id}")
+        if not fact.supersedes:
+            raise ValueError(f"{fact_id} replaced nothing, so there is nothing to revert")
+        if fact.status != "active":
+            raise ValueError(f"{fact_id} is no longer active; revert the newest step first")
+        with self.atomic():
+            for old_id in fact.supersedes:
+                self.conn.execute(
+                    "UPDATE facts SET status = 'active', superseded_by = NULL, valid_until ="
+                    " CASE WHEN valid_until = ? THEN NULL ELSE valid_until END WHERE fact_id = ?",
+                    (fact.valid_from, old_id))
+            self.update_fact_status(fact_id, "retracted", superseded_by=fact.supersedes[0])
+        return [self.get_fact(old_id) for old_id in fact.supersedes]
+
     def get_fact(self, fact_id: str) -> Optional[Fact]:
         row = self.conn.execute("SELECT * FROM facts WHERE fact_id = ?", (fact_id,)).fetchone()
         return self._fact(row) if row else None

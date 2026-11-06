@@ -126,7 +126,7 @@ Everything goes to `results/<run_name>/`:
 - `summary.md` and `summary.json`: F1 and BLEU-1 per LoCoMo category, plus LLM calls and seconds per memory write, and prompt tokens per question.
 - `sample_<i>.jsonl`: every question, the prediction, the reference answer and its scores.
 - `ops_sample_<i>.jsonl`: a trace of every memory operation (type, LLM calls, tokens, latency).
-- `memory_sample_<i>.sqlite`: the memory after the conversation. Look inside with `python scripts/inspect_memory.py results/<run>/memory_sample_0.sqlite --notes 5`.
+- `memory_sample_<i>.sqlite`: the memory after the conversation. Look inside with `python scripts/inspect_memory.py results/<run>/memory_sample_0.sqlite --notes 5`. Add `--entity NAME` to list a person's current and past facts, or `--revert FACT_ID` to undo the `REPLACE` or `CORRECT` that created a fact. Reverting changes that file, retracts the new fact and deletes nothing, so keep a copy if you still need to score the run.
 
 If a run stops halfway, run the same command again. Finished conversations are skipped.
 
