@@ -20,6 +20,7 @@ from pathlib import Path
 from statistics import mean
 
 from agent.assistant import Assistant
+from harness.contradictions import contradiction_line, read_curve, summarise_curves
 from harness.metrics import bleu1, f1, summarise
 from tsom.amem_bridge import load_locomo_dataset
 from tsom.contracts import RunConfig
@@ -45,7 +46,7 @@ def run(config: RunConfig) -> dict:
         dataset = REPO_ROOT / dataset  # relative paths in configs are from the repo root
     samples = load_locomo_dataset(str(dataset))[: config.max_samples]
 
-    rows, write_ops = [], []
+    rows, write_ops, curves = [], [], {}
     for idx, sample in enumerate(samples):
         pred_file = out / f"sample_{idx}.jsonl"
         ops_file = out / f"ops_sample_{idx}.jsonl"
@@ -54,10 +55,13 @@ def run(config: RunConfig) -> dict:
             rows += [json.loads(line) for line in pred_file.read_text().splitlines()]
             write_ops += [op for op in map(json.loads, ops_file.read_text().splitlines())
                           if op["op_type"] in WRITE_OPS]
-            continue
-        sample_rows, sample_ops = run_sample(config, llm, idx, sample, out)
-        rows += sample_rows
-        write_ops += [op for op in sample_ops if op["op_type"] in WRITE_OPS]
+        else:
+            sample_rows, sample_ops = run_sample(config, llm, idx, sample, out)
+            rows += sample_rows
+            write_ops += [op for op in sample_ops if op["op_type"] in WRITE_OPS]
+        if config.system == "tsom":
+            curves[str(idx)] = read_curve(out / f"memory_sample_{idx}.sqlite", str(idx),
+                                          config.multivalued_attributes)
 
     summary = {
         "run_name": config.run_name,
@@ -67,6 +71,7 @@ def run(config: RunConfig) -> dict:
         "conversations": len(samples),
         "scores": summarise(rows),
         "cost": cost_summary(rows, write_ops),
+        "contradictions": summarise_curves(curves),
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2))
     (out / "summary.md").write_text(to_markdown(summary))
@@ -172,6 +177,8 @@ def to_markdown(summary: dict) -> str:
                       f"{cost['temporal_seconds_per_write']:.2f} | {cost['total_seconds_per_write']:.2f} |",
                       "", f"Fact operations: {ops}. Temporal steps that failed and were skipped: "
                       f"{cost['temporal_failures']}."]
+    if summary.get("contradictions"):
+        lines += ["", contradiction_line(summary["contradictions"])]
     return "\n".join(lines) + "\n"
 
 

@@ -27,6 +27,7 @@ from pathlib import Path
 from statistics import mean
 from typing import Callable, Dict, List, Optional, Tuple
 
+from harness.contradictions import contradiction_line, read_curve, summarise_curves
 from harness.factcons_answer import answer_question, mark_stale, score, stale_counts
 from harness.run_locomo import cost_summary
 from tsom.contracts import RunConfig
@@ -99,7 +100,7 @@ def run(config: RunConfig, variant: str, size: str = "6k", chunk: int = 20,
     llm = LLM.from_config(config)
     llm.check()
 
-    rows, ops = [], []
+    rows, ops, curves = [], [], {}
     for sample in samples:
         tag = sample["tag"]
         pred_file, ops_file = out / f"sample_{tag}.jsonl", out / f"ops_sample_{tag}.jsonl"
@@ -108,12 +109,16 @@ def run(config: RunConfig, variant: str, size: str = "6k", chunk: int = 20,
             rows += [mark_stale(json.loads(line), sample)
                      for line in pred_file.read_text().splitlines()]
             ops += [json.loads(line) for line in ops_file.read_text().splitlines()]
-            continue
-        sample_rows, sample_ops = run_sample(config, llm, sample, chunk, out)
-        rows += sample_rows
-        ops += sample_ops
+        else:
+            sample_rows, sample_ops = run_sample(config, llm, sample, chunk, out)
+            rows += sample_rows
+            ops += sample_ops
+        if config.system == "tsom":
+            curves[tag] = read_curve(out / f"memory_sample_{tag}.sqlite", tag,
+                                     config.multivalued_attributes)
 
     summary = summarise_run(config, variant, size, chunk, rows, ops)
+    summary["contradictions"] = summarise_curves(curves)
     stem = f"summary_factcons_{variant}_{size}"
     (out / f"{stem}.json").write_text(json.dumps(summary, indent=2))
     (out / f"{stem}.md").write_text(to_markdown(summary))
@@ -203,6 +208,7 @@ def to_markdown(s: dict) -> str:
     lines += [f"| **All** | {s['questions']} | **{s['accuracy']:.3f}** | {s['f1']:.3f} |", "",
               f"Stale answers: {stale['stale_answers']} of {stale['changed_questions']} questions "
               f"whose fact changed ({stale['stale_rate']:.3f}).{note}", "",
+              *([contradiction_line(s["contradictions"]), ""] if s["contradictions"] else []),
               "| Cost | Value |", "|---|---|",
               f"| Ingest LLM calls | {c['ingest_llm_calls']} |",
               f"| Ingest tokens (prompt / completion) | {c['ingest_prompt_tokens']} / {c['ingest_completion_tokens']} |",
