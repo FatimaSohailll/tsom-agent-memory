@@ -82,6 +82,17 @@ def table(header: List[str], rows: List[List[str]]) -> List[str]:
             *("| " + " | ".join(row) + " |" for row in rows), ""]
 
 
+def extraction_section(runs: Runs) -> List[str]:
+    lines = ["## Extraction recall", ""]
+    found = {s: [x for x in (_load(d / "extraction_summary.json") for d in dirs) if x]
+             for s, dirs in runs.items()}
+    if not any(found.values()):
+        return lines + ["No extraction results found.", ""]
+    rows = [[s, rate_cell([[f["found"] for f in x["per_fact"]] for x in xs])[0]]
+            for s, xs in found.items() if xs]
+    return lines + table(["System", "Recall"], rows)
+
+
 def scenario_section(runs: Runs) -> List[str]:
     lines = ["## Change scenarios", ""]
     summaries = {s: [_load(d / "scenarios_summary.json") for d in dirs] for s, dirs in runs.items()}
@@ -160,8 +171,8 @@ def locomo_section(runs: Runs) -> List[str]:
 
 
 def make_tables(runs: Runs) -> str:
-    return "\n".join(["# Results", "", *scenario_section(runs), *factcons_section(runs),
-                      *locomo_section(runs)])
+    return "\n".join(["# Results", "", *extraction_section(runs), *scenario_section(runs),
+                      *factcons_section(runs), *locomo_section(runs)])
 
 
 def parse_run(text: str) -> Tuple[str, List[Path]]:

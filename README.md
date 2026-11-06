@@ -96,6 +96,14 @@ python -m harness.run_scenarios --config configs/tsom_qwen2.5-3b.json --set run_
 
 Every LLM call uses temperature 0 unless the config sets another value. The questions ask for the current value, so these runs do not test questions about a past date.
 
+### Extraction recall
+
+`harness/eval_extraction.py` sends each scenario turn to the fact extractor alone and checks how many labelled facts it finds, with the right person and value. It uses no memory or classifier, so a miss is the extractor's own. It has no list of known attribute names, unlike a full run.
+
+```bash
+python -m harness.eval_extraction --config configs/tsom_qwen2.5-3b.json --set run_name=extraction_s1
+```
+
 ### Result tables
 
 `harness/make_tables.py` builds tables from finished runs, with one `--run` per system and one folder per seed:
