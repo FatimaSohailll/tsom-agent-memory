@@ -1,34 +1,21 @@
-# Time-Scoped Ontological Memory (TSOM)
+# Agent-memory baselines: A-Mem and RAG
 
-Conflict-aware self-organising memory for persistent LLM agents. AI4015 Agentic AI, Fall 2026, project G1-08.
+Two memory systems for persistent LLM agents, evaluated on LoCoMo through one shared agent, tool interface and harness:
 
-We build on A-Mem (Xu et al., NeurIPS 2025). A-Mem stores every conversation turn as a linked note and lets new notes rewrite old ones ("evolution"). It never checks whether a new fact contradicts an old one, it runs evolution on every write, and it has no idea when a fact stopped being true. TSOM adds three things on top:
-
-1. **Conflict classifier** (Gap 1): labels each new fact as additive, corrective, contradictory or redundant.
-2. **Conflict gate** (Gap 2): runs A-Mem's evolution only when something conflicts or is very similar.
-3. **Time-scoped facts** (Gap 3): old facts get a "true until" date instead of being overwritten.
-
-**Phase 1 status:** two baselines run end to end on LoCoMo through our own agent, tools and harness:
-
-- **A-Mem** (`system: amem`): the base paper's memory, using the authors' code unchanged.
+- **A-Mem** (`system: amem`): Xu et al., NeurIPS 2025. Every conversation turn is stored as a linked note, and new notes can rewrite old ones ("evolution"). We use the authors' code unchanged.
 - **RAG** (`system: rag`): stores raw turns and retrieves the top-k by embedding similarity. No LLM calls when storing, no links, no evolution. Same embedder, same answer prompts, same k as A-Mem, so the only difference is the memory.
-
-The three additions have interfaces in `tsom/memory.py` (`extract_facts`, `classify`, `gate`) and the fact tables already exist in `tsom/store.py`. They are built in Phase 2, along with the MemGPT-style baseline.
-
-![Architecture](docs/architecture_diagram.png)
 
 ## Repository layout
 
 ```
 tsom/            memory module
-  contracts.py   Note, Fact, MemoryOp, RunConfig (JSON schemas: python -m tsom.contracts)
-  schema.py      the 15 predicates, single- or multi-valued
-  store.py       SQLite tables for notes, facts and the operation log
-  memory.py      wraps A-Mem, logs cost and latency of every write; Phase 2 hooks
+  contracts.py   Note, MemoryOp, RunConfig (JSON schemas: python -m tsom.contracts)
+  store.py       SQLite tables for notes and the operation log
+  memory.py      wraps A-Mem, logs cost and latency of every write
   rag.py         RAG baseline: raw turns, top-k retrieval, no LLM on write
-  tools.py       write_memory, search_memory, get_fact_history, inspect_memory
+  tools.py       write_memory, search_memory
   llm.py         provider setup: Ollama, OpenAI, vLLM, or a fake model for tests
-  graph.py       NetworkX view of notes and facts
+  graph.py       NetworkX view of notes and their links
 agent/           the assistant: stores turns, answers questions through the tools
 harness/         LoCoMo replay, F1 and BLEU-1 (same definitions as A-Mem), cost tables
 scripts/         run_baseline.sh, demo.py, inspect_memory.py
@@ -85,7 +72,7 @@ If a run stops halfway, run the same command again. Finished conversations are s
 
 We follow A-Mem's own LoCoMo evaluation: all 10 conversations, all five question categories, F1 and BLEU-1, the same answer prompts and the same retrieval k. The baseline uses A-Mem's released reproduction code without changes, so our A-Mem numbers can be checked against Table 1 of their paper for the same model.
 
-## Results so far
+## Results
 
 Initial results live in `results/<run_name>/summary.md`. Each table says which model was used and how many conversations it covers. Runs on fewer than 10 conversations are partial and are labelled that way.
 

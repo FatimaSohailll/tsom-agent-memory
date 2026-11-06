@@ -1,1 +1,1 @@
-"""tsom: time-scoped ontological memory on top of A-Mem."""
+"""Agent-memory baselines (A-Mem and RAG) for LoCoMo."""

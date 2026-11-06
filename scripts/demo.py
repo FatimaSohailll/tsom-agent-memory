@@ -1,4 +1,4 @@
-"""Small end-to-end demo: two sessions, a fact that changes, then questions.
+"""Small end-to-end demo: two sessions, then questions.
 
     python scripts/demo.py                      # uses qwen2.5:3b through Ollama
     python scripts/demo.py --backend fake       # no model needed, checks the plumbing
@@ -33,7 +33,7 @@ SESSIONS = [
 ]
 
 QUESTIONS = [
-    ("Where does Ali live now?", 4, "Lahore"),
+    ("When did Ali start his job at the bank?", 2, "January 2023"),
     ("When did Ali move to Lahore?", 2, "June 2023"),
     ("What is the name of Ali's cat?", 4, "Biscuit"),
 ]

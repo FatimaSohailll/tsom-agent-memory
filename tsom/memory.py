@@ -1,8 +1,7 @@
-"""The memory module: A-Mem notes plus our fact layer, behind one class.
+"""The A-Mem memory system behind our common memory interface.
 
-Phase 1 runs A-Mem unchanged (system="amem") and records cost and latency
-for every operation. The fact layer, classifier, gate and validity steps
-(system="tsom") have their interfaces here and are filled in during Phase 2.
+Runs A-Mem unchanged (the authors' code, via tsom.amem_bridge), mirrors its notes
+into SQLite, and records cost and latency for every operation.
 """
 
 from __future__ import annotations
@@ -11,7 +10,7 @@ import time
 from typing import List, Optional
 
 from .amem_bridge import RobustAgenticMemorySystem
-from .contracts import Fact, MemoryOp, Note, RunConfig
+from .contracts import MemoryOp, Note, RunConfig
 from .llm import LLM
 from .store import Store
 
@@ -19,8 +18,6 @@ from .store import Store
 class MemorySystem:
     def __init__(self, config: RunConfig, llm: LLM, db_path: str = ":memory:",
                  sample_id: Optional[str] = None):
-        if config.system == "tsom" and (config.use_classifier or config.use_gate or config.use_validity):
-            raise NotImplementedError("classifier, gate and validity are Phase 2 work")
         self.config = config
         self.llm = llm
         self.sample_id = sample_id
@@ -49,21 +46,6 @@ class MemorySystem:
         ))
         return note_id
 
-    # Phase 2 hooks. Each one is a single, separately switchable step.
-
-    def extract_facts(self, note: Note) -> List[Fact]:
-        """Turn a note into typed facts against tsom.schema.PREDICATES."""
-        raise NotImplementedError("Phase 2")
-
-    def classify(self, fact: Fact) -> str:
-        """Gap 1: label a fact additive, corrective, contradictory or redundant."""
-        raise NotImplementedError("Phase 2")
-
-    def gate(self, labels: List[str], neighbour_similarity: float) -> bool:
-        """Gap 2: True means run A-Mem evolution for this write."""
-        return any(lbl in ("corrective", "contradictory") for lbl in labels) or \
-            neighbour_similarity >= self.config.tau
-
     # ---- read path ----
 
     def search(self, query: str, k: int) -> dict:
@@ -71,20 +53,7 @@ class MemorySystem:
         context = self.amem.find_related_memories_raw(query, k=k)
         self.store.log_op(MemoryOp(op_type="search", system=self.config.system,
                                    sample_id=self.sample_id, latency_s=time.perf_counter() - start))
-        return {"notes": context, "facts": []}  # facts filled once the fact layer exists
-
-    def fact_history(self, entity: str, predicate: Optional[str] = None) -> List[Fact]:
-        self.store.log_op(MemoryOp(op_type="fact_history", system=self.config.system,
-                                   sample_id=self.sample_id))
-        return self.store.fact_history(entity, predicate)
-
-    def inspect(self, entity: str) -> dict:
-        facts = self.store.fact_history(entity)
-        return {
-            "entity": entity,
-            "current": [f.model_dump() for f in facts if f.status == "active"],
-            "retired": [f.model_dump() for f in facts if f.status != "active"],
-        }
+        return {"notes": context}
 
     # ---- helpers ----
 

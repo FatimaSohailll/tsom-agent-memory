@@ -41,4 +41,3 @@ def test_tools_match_specs():
     note_id = tools.call("write_memory", turn="Speaker Ali says : I live in Karachi", time="1 May 2023")["note_id"]
     assert memory.store.get_note(note_id) is not None
     assert "Karachi" in tools.call("search_memory", query="Karachi", k=1)["notes"]
-    assert tools.call("inspect_memory", entity="Ali") == {"entity": "Ali", "current": [], "retired": []}
