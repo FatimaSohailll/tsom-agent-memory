@@ -19,12 +19,12 @@ tsom/            memory module
   llm.py         provider setup: Ollama, OpenAI, vLLM, or a fake model for tests
   graph.py       NetworkX view of notes and their links
 agent/           the assistant: stores turns, answers questions through the tools
-harness/         LoCoMo replay (run_locomo), FactConsolidation replay (run_factcons), F1 and BLEU-1 (same definitions as A-Mem), cost tables
-scripts/         run_baseline.sh, demo.py, demo_temporal.py, inspect_memory.py
+harness/         LoCoMo replay (run_locomo), FactConsolidation replay (run_factcons), change scenarios (run_scenarios), F1 and BLEU-1 (same definitions as A-Mem), cost and result tables
+scripts/         run_baseline.sh, demo.py, demo_temporal.py, inspect_memory.py, generate_scenarios.py, review_scenarios.py
 configs/         one JSON file per run
 notebooks/       colab_baseline.ipynb, for running on a free Colab GPU
 third_party/amem A-Mem's code, copied unchanged from a pinned commit (MIT)
-data/            locomo10.json (10 conversations, 1,986 questions)
+data/            locomo10.json (10 conversations, 1,986 questions), scenarios/ (change scenarios)
 tests/           offline tests, no model or GPU needed
 ```
 
@@ -80,6 +80,26 @@ python -m harness.run_locomo --config configs/rag_qwen2.5-3b.json --set max_samp
 ```
 
 To use a different model, pick another config (`configs/amem_llama3.2-3b.json`, or `configs/amem_gpt-4o-mini.json` with `OPENAI_API_KEY` set) or override fields: `--set model=llama3.2:3b run_name=my_run`.
+
+### Change scenarios
+
+Short dialogues in which one fact changes, is added to or is restated. Only scenarios marked reviewed are used. `scripts/review_scenarios.py` moves drafts into the reviewed file, one at a time, and the generated drafts come from `scripts/generate_scenarios.py`.
+
+```bash
+python -m harness.run_scenarios --config configs/tsom_qwen2.5-3b.json --set run_name=tsom_s1 seed=1
+```
+
+Every LLM call uses temperature 0 unless the config sets another value. The questions ask for the current value, so these runs do not test questions about a past date.
+
+### Result tables
+
+`harness/make_tables.py` builds tables from finished runs, with one `--run` per system and one folder per seed:
+
+```bash
+python -m harness.make_tables --run amem=results/amem_s1,results/amem_s2,results/amem_s3 --run tsom=results/tsom_s1,results/tsom_s2,results/tsom_s3
+```
+
+Each cell shows the mean, the standard deviation across seeds, and a bootstrap 95% confidence interval that resamples questions or scenarios. Missing runs are shown as missing.
 
 ### Repeatable runs
 

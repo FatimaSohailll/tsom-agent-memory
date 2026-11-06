@@ -182,6 +182,15 @@ def to_markdown(summary: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def load_config(path: str, overrides: list) -> RunConfig:
+    """A config file with KEY=VALUE overrides applied."""
+    data = json.loads(Path(path).read_text())
+    for item in overrides:
+        key, value = item.split("=", 1)
+        data[key] = json.loads(value) if value.replace(".", "", 1).isdigit() or value in ("true", "false", "null") else value
+    return RunConfig(**data)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--config", required=True)
@@ -191,11 +200,7 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     logging.getLogger("amem_robust").setLevel(logging.WARNING)
 
-    data = json.loads(Path(args.config).read_text())
-    for item in args.set:
-        key, value = item.split("=", 1)
-        data[key] = json.loads(value) if value.replace(".", "", 1).isdigit() or value in ("true", "false", "null") else value
-    run(RunConfig(**data))
+    run(load_config(args.config, args.set))
 
 
 if __name__ == "__main__":
