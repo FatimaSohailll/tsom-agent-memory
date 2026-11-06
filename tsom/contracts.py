@@ -11,7 +11,7 @@ import time
 import uuid
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 def new_id() -> str:
@@ -101,11 +101,19 @@ class RunConfig(BaseModel):
     temperature: Optional[float] = None
     seed: int = 42
     send_seed: bool = False  # also send seed to the model, not just to the answer-order shuffle
+    # tsom only: the agent chooses at question time whether to call get_fact_history.
+    use_fact_history: bool = False
     dataset: str = "data/locomo10.json"
     max_samples: Optional[int] = None  # None = all 10 conversations
     max_sessions: Optional[int] = None  # None = every session
     max_questions: Optional[int] = None  # per conversation; None = all
     output_dir: str = "results"
+
+    @model_validator(mode="after")
+    def _fact_history_needs_facts(self):
+        if self.use_fact_history and self.system != "tsom":
+            raise ValueError("use_fact_history needs system='tsom'")
+        return self
 
 
 if __name__ == "__main__":

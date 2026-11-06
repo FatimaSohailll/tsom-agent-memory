@@ -38,7 +38,8 @@ METRICS = ["correct", "stale", "hedged", "consistent", "retention"]
 def run_scenario(config: RunConfig, llm: LLM, scenario: Scenario) -> dict:
     memory_cls = RagMemory if config.system == "rag" else MemorySystem
     memory = memory_cls(config, llm, sample_id=scenario.id)
-    agent = Assistant(MemoryTools(memory), llm, config.retrieve_k, config.temperature_c5, seed=config.seed)
+    agent = Assistant(MemoryTools(memory), llm, config.retrieve_k, config.temperature_c5, seed=config.seed,
+                      use_fact_history=config.use_fact_history)
     for session in scenario.sessions:
         for turn in session.turns:
             agent.observe(turn.speaker, turn.text, session.date)

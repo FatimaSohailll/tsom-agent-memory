@@ -85,7 +85,7 @@ def run_sample(config: RunConfig, llm: LLM, idx: int, sample, out: Path):
     memory_cls = RagMemory if config.system == "rag" else MemorySystem
     memory = memory_cls(config, llm, db_path=str(db), sample_id=str(idx))
     agent = Assistant(MemoryTools(memory), llm, config.retrieve_k, config.temperature_c5,
-                      seed=config.seed + idx)
+                      seed=config.seed + idx, use_fact_history=config.use_fact_history)
 
     sessions = sorted(sample.conversation.sessions.items())[: config.max_sessions]
     n_turns = sum(len(s.turns) for _, s in sessions)

@@ -87,6 +87,9 @@ class MemorySystem:
                                    sample_id=self.sample_id, latency_s=time.perf_counter() - start))
         return result
 
+    def fact_history(self, entity: str) -> dict:
+        return {"facts": self.temporal_retriever.history(entity) if self.config.system == "tsom" else ""}
+
     # ---- temporal layer (system == "tsom" only) ----
 
     def _note_state(self) -> dict:

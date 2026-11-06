@@ -123,6 +123,12 @@ class TemporalRetriever:
             kept_lines = [line for group in lines.values() for line in group]
         return {"notes": notes_str, "facts": "\n".join(kept_lines), "query_type": query_type}
 
+    def history(self, entity: str) -> str:
+        """Every fact held about `entity`, oldest first, without retracted ones."""
+        store, sid = self.memory.store, self.memory.sample_id or ""
+        facts = [f for f in store.entity_facts(sid, entity) if f.status != "retracted"]
+        return "\n".join(self._format(store, sid, f) for f in facts[-self.max_facts:])
+
     def _scores(self, query: str, shown: Dict[Tuple[str, str], List[Fact]]) -> Dict[Tuple[str, str], float]:
         """Each group's best cosine similarity to the query, with the embedder A-Mem uses."""
         encode = self.memory.amem.retriever.model.encode

@@ -15,7 +15,7 @@ tsom/            memory module
   memory.py      wraps A-Mem, logs cost and latency of every write; runs the temporal layer when system=tsom
   temporal/      TSOM: extractor, attribute canonicalizer, update classifier, consolidator, retriever
   rag.py         RAG baseline: raw turns, top-k retrieval, no LLM on write
-  tools.py       write_memory, search_memory
+  tools.py       write_memory, search_memory, get_fact_history
   llm.py         provider setup: Ollama, OpenAI, vLLM, or a fake model for tests
   graph.py       NetworkX view of notes and their links
 agent/           the assistant: stores turns, answers questions through the tools
@@ -81,6 +81,10 @@ python -m harness.run_locomo --config configs/rag_qwen2.5-3b.json --set max_samp
 ```
 
 To use a different model, pick another config (`configs/amem_llama3.2-3b.json`, or `configs/amem_gpt-4o-mini.json` with `OPENAI_API_KEY` set) or override fields: `--set model=llama3.2:3b run_name=my_run`.
+
+#### Fact history tool
+
+With `use_fact_history=true` (`tsom` only), the agent makes one extra LLM call per question to choose between plain search and `get_fact_history`. If it picks history for an entity, that entity's facts, past values included, are added to the context. An unusable reply means plain search. It is off by default and applies to LoCoMo and the change scenarios. FactConsolidation uses its own answer step and always searches.
 
 ### Change scenarios
 
