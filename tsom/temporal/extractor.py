@@ -3,12 +3,20 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from .parsers import parse_facts
 from .prompts import build_batch_extraction_prompt, build_extraction_prompt
 
 BATCH_SIZE = 10
+_TURN = re.compile(r"^Speaker (.+?)\s*says : (.*)$", re.DOTALL)
+
+
+def split_turn(content: str) -> Tuple[Optional[str], str]:
+    """(speaker, text) of a stored turn, which reads "Speaker Alisays : ..." as
+    A-Mem formats it. Content without that prefix is returned as (None, content)."""
+    m = _TURN.match(content)
+    return (m.group(1), m.group(2)) if m else (None, content)
 
 
 class FactExtractor:
@@ -17,12 +25,14 @@ class FactExtractor:
         self.temperature = temperature
         self.batch_size = max(1, batch_size)
 
-    def extract(self, text: str, known_attributes: Optional[List[str]] = None) -> List[dict]:
+    def extract(self, text: str, known_attributes: Optional[List[str]] = None,
+                speaker: Optional[str] = None) -> List[dict]:
         """Facts in `text`: dicts with entity, attribute, value, valid_from, valid_until,
-        temporal_status. `known_attributes` are offered to the model for reuse."""
+        temporal_status. `known_attributes` are offered to the model for reuse, and
+        `speaker` tells it who "I" is."""
         if not text or not text.strip():
             return []
-        prompt = build_extraction_prompt(text.strip(), known_attributes)
+        prompt = build_extraction_prompt(text.strip(), known_attributes, speaker)
         return parse_facts(self.llm.get_completion(prompt, self.temperature))
 
     def extract_batch(self, statements: List[str],

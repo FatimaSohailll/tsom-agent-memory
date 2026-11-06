@@ -20,9 +20,16 @@ class Consolidator:
     def apply(self, sample_id: str, note_id: str, new: dict, op: str, old_facts: List[Fact],
               observed_at: int, observed_time: Optional[str]) -> Fact:
         """Apply `op` and return the fact now live for this key (ADD, REPLACE,
-        CORRECT), the reaffirmed fact (REAFFIRM), or the inserted, already
-        superseded fact (ADD_HISTORICAL)."""
+        CORRECT), the reaffirmed fact (REAFFIRM), the inserted, already superseded
+        fact (ADD_HISTORICAL), or the untouched current fact (UNRESOLVED)."""
         self.last_op = op
+        if op == "UNRESOLVED":
+            if not old_facts:
+                raise ValueError("UNRESOLVED needs the fact it could not be compared with")
+            log.warning("unreadable classifier reply for %s | %s | %s; kept the current fact",
+                        new["entity"], new["attribute"], new["value"])
+            return old_facts[0]
+
         if op == "REAFFIRM":
             if not old_facts:
                 raise ValueError("REAFFIRM needs the fact being reaffirmed")

@@ -70,11 +70,13 @@ def test_llm_outcomes(response, expected):
 
 @pytest.mark.parametrize("response", ["", "garbage", "OPERATION: maybe\nREASON: unsure",
                                       "REASON: it should CORRECT this"])
-def test_unparseable_defaults_to_replace(response):
+def test_unparseable_is_unresolved(response):
     store = Store()
     seed(store)
-    op, old = UpdateClassifier(Canned(response), store).classify("s0", new(), 2)
-    assert op == "REPLACE" and len(old) == 1
+    c = UpdateClassifier(Canned(response), store)
+    op, old = c.classify("s0", new(), 2)
+    assert op == "UNRESOLVED" and len(old) == 1
+    assert c.op_counts["UNRESOLVED"] == 1 and c.last_decision["raw"] == response
 
 
 def test_fake_backend():
@@ -212,12 +214,20 @@ def test_llm_only_falls_back_to_rules_after_two_failures():
     assert len(llm.prompts) == 2
 
 
+def test_llm_only_is_unresolved_when_no_rule_decides():
+    store = Store()
+    seed(store)
+    c = UpdateClassifier(Canned("garbage"), store, mode="llm_only")
+    assert c.classify("s0", new(), 2)[0] == "UNRESOLVED"
+    assert c.last_decision["source"] == "fallback:LLM"
+
+
 def test_parse_add_historical_only_when_allowed():
     allowed = ("REPLACE", "CORRECT", "ADD", "ADD_HISTORICAL")
     assert parse_update_classification("OPERATION: ADD_HISTORICAL\nREASON: x", allowed)[0] == "ADD_HISTORICAL"
     assert parse_update_classification("OPERATION: ADD\nREASON: x", allowed)[0] == "ADD"
-    assert parse_update_classification("OPERATION: ADD_HISTORICAL\nREASON: x")[0] == "REPLACE"  # default set
-    assert parse_update_classification("nonsense", allowed, default=None) == (None, "")
+    assert parse_update_classification("OPERATION: ADD_HISTORICAL\nREASON: x")[0] is None  # not allowed here
+    assert parse_update_classification("nonsense", allowed) == (None, "")
 
 
 def test_unknown_mode_rejected():

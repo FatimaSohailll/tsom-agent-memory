@@ -275,7 +275,7 @@ def test_classifier_reads_only_the_operation_line():
     c = UpdateClassifier(llm, store)
     assert c.classify("s0", careem("PRESENT"), 8)[0] == "ADD"
     llm.response = "REASON: this is a CORRECT case"
-    assert c.classify("s0", careem("PRESENT"), 8)[0] == "REPLACE"  # no OPERATION line -> default
+    assert c.classify("s0", careem("PRESENT"), 8)[0] == "UNRESOLVED"  # no OPERATION line
 
 
 # ---- 5. consolidator guard ----

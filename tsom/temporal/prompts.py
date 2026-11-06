@@ -128,8 +128,16 @@ def attribute_hint(names) -> str:
             "otherwise use a new short snake_case name): " + ", ".join(names) + "\n\n")
 
 
-def build_extraction_prompt(text: str, known_attributes=None) -> str:
-    return FACT_EXTRACTION_PROMPT.format(text=text, attribute_hint=attribute_hint(known_attributes))
+def speaker_hint(speaker) -> str:
+    """The prompt line saying who is speaking ("" if nobody is named)."""
+    if not speaker:
+        return ""
+    return f'The speaker is {speaker}. "I", "me" and "my" refer to {speaker}.\n\n'
+
+
+def build_extraction_prompt(text: str, known_attributes=None, speaker=None) -> str:
+    return FACT_EXTRACTION_PROMPT.format(
+        text=text, attribute_hint=attribute_hint(known_attributes) + speaker_hint(speaker))
 
 
 def build_batch_extraction_prompt(statements: str, known_attributes=None) -> str:
