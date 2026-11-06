@@ -1,0 +1,10 @@
+{
+  "run_name": "tsom_newest_qwen2.5-3b",
+  "system": "tsom",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "retrieve_k": 10,
+  "seed_multivalued": false,
+  "additive_cue": false,
+  "classifier_mode": "newest_wins"
+}

@@ -1,8 +1,12 @@
+import json
+from pathlib import Path
+
 from harness.run_locomo import cost_summary
 from tsom.contracts import Fact, RunConfig
 from tsom.llm import LLM
 from tsom.memory import MemorySystem
 from tsom.store import Store
+from tsom.temporal.classifier import UpdateClassifier
 from tsom.temporal.consolidator import Consolidator
 
 
@@ -310,3 +314,38 @@ def test_unresolved_keeps_the_old_fact_and_is_counted():
     ops = [op.model_dump() for op in mem.store.ops()]
     assert ops[-1]["op_counts"] == {"UNRESOLVED": 1} and ops[-1]["failures"] == 0
     assert cost_summary([], ops)["fact_ops"] == {"ADD": 1, "UNRESOLVED": 1}
+
+
+def test_newest_wins_runs_with_no_classifier_calls():
+    prompts = []
+
+    class Watching(LLM):
+        def _call(self, prompt, temperature):
+            prompts.append(prompt)
+            return super()._call(prompt, temperature)
+
+    config = RunConfig(run_name="t", system="tsom", backend="fake", model="fake",
+                       classifier_mode="newest_wins")
+    memory = MemorySystem(config, Watching("fake", "fake"), sample_id="s0")
+    memory.write("Alice is Lahore.", "t1")
+    memory.write("Alice is Karachi.", "t2")
+    assert not any(p.startswith("A memory already contains") for p in prompts)
+    assert [(f.value, f.status) for f in memory.store.fact_history("s0", "Alice", "is")] == [
+        ("Lahore", "superseded"), ("Karachi", "active")]
+
+
+def test_the_config_file_selects_newest_wins():
+    data = json.loads((Path(__file__).parent.parent / "configs/tsom_newest_qwen2.5-3b.json").read_text())
+    assert RunConfig(**data).classifier_mode == "newest_wins"
+
+
+def test_newest_wins_still_keeps_a_dated_earlier_fact_as_history():
+    store = Store()
+    classifier = UpdateClassifier(None, store, mode="newest_wins")
+    consolidator = Consolidator(store)
+    for step, value, start in ((1, "Lahore", "2020"), (2, "Dubai", "2018")):
+        new = {"entity": "Ali", "attribute": "lives_in", "value": value, "valid_from": start}
+        op, old = classifier.classify("s", new, step)
+        consolidator.apply("s", "n", new, op, old, step, "t")
+    assert consolidator.last_op == "ADD_HISTORICAL"
+    assert [f.value for f in store.active_facts("s", "Ali", "lives_in")] == ["Lahore"]

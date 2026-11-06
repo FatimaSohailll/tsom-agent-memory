@@ -233,3 +233,45 @@ def test_parse_add_historical_only_when_allowed():
 def test_unknown_mode_rejected():
     with pytest.raises(ValueError):
         UpdateClassifier(NoLLM(), Store(), mode="nope")
+
+
+# ---- classifier_mode = "newest_wins" ----
+
+def test_newest_wins_replaces_a_differing_value_without_the_llm():
+    store = Store()
+    old = seed(store)
+    c = UpdateClassifier(NoLLM(), store, mode="newest_wins")
+    assert c.classify("s0", new(), 5) == ("REPLACE", [old])
+    assert c.last_decision["source"] == "newest_wins" and c.last_decision["raw"] is None
+
+
+def test_newest_wins_still_adds_and_reaffirms():
+    store = Store()
+    c = UpdateClassifier(NoLLM(), store, mode="newest_wins")
+    assert c.classify("s0", new(), 5) == ("ADD", [])
+    old = seed(store, "Karachi")
+    assert c.classify("s0", new(), 6) == ("REAFFIRM", [old])
+
+
+def test_newest_wins_replaces_every_active_value():
+    store = Store()
+    old = [seed(store, "Lahore", 1), seed(store, "Dubai", 2)]
+    c = UpdateClassifier(NoLLM(), store, mode="newest_wins")
+    op, touched = c.classify("s0", new(), 5)
+    assert op == "REPLACE" and [f.fact_id for f in touched] == [f.fact_id for f in old]
+
+
+def test_newest_wins_ignores_additive_and_correction_wording():
+    store = Store()
+    seed(store)
+    c = UpdateClassifier(NoLLM(), store, mode="newest_wins", seed_multivalued=True, additive_cue=True,
+                         multivalued_attributes=["lives_in"])
+    for text in ("She also lives in Karachi.", "Actually, she lives in Karachi."):
+        assert c.classify("s0", new(source_text=text), 5)[0] == "REPLACE"
+
+
+def test_newest_wins_ignores_a_past_tense_earlier_start():
+    store = Store()
+    seed(store, valid_from="2020")
+    c = UpdateClassifier(NoLLM(), store, mode="newest_wins")
+    assert c.classify("s0", new(valid_from="2018", temporal_status="PAST"), 5)[0] == "REPLACE"
