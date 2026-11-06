@@ -128,6 +128,15 @@ def test_a_stated_end_date_wins_over_the_session_date():
     assert values(mem, "where did Alice live in March 2023") == []  # after 2022, before June
 
 
+def test_a_late_historical_fact_is_not_shown_as_replaced():
+    mem = system(Scripted([ft("Microsoft", "2022", attr="works_at"), ft("Careem", "2018", attr="works_at")]))
+    mem.write("Alice works at Microsoft since 2022.", "t1")
+    mem.write("In 2018 Alice worked at Careem.", "t2")
+    assert mem.temporal_retriever.search("Alice previously", 5)["facts"].splitlines() == [
+        "[CURRENT] Alice | works_at | Microsoft (step 1)",
+        "[PAST] Alice | works_at | Careem (step 2, earlier than the value from step 1)"]
+
+
 def test_retracted_never_appears():
     mem = system(Scripted([ft("Lahore"), ft("Karachi")]))
     mem.write("I live in Lahore.", "t1")

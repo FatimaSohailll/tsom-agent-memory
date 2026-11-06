@@ -165,5 +165,10 @@ class TemporalRetriever:
         if f.status == "active":
             return f"[CURRENT] {f.entity} | {f.attribute} | {f.value} (step {f.observed_at})"
         later = store.get_fact(f.superseded_by) if f.superseded_by else None
-        replaced = f", replaced at step {later.observed_at}" if later else ""
-        return f"[PAST] {f.entity} | {f.attribute} | {f.value} (step {f.observed_at}{replaced})"
+        if later is None:
+            note = ""
+        elif f.fact_id in later.supersedes:
+            note = f", replaced at step {later.observed_at}"
+        else:  # learned late: it ended before `later`, which never replaced it
+            note = f", earlier than the value from step {later.observed_at}"
+        return f"[PAST] {f.entity} | {f.attribute} | {f.value} (step {f.observed_at}{note})"
