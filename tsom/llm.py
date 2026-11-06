@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import time
 from dataclasses import dataclass
 
@@ -99,6 +100,19 @@ def fake_completion(prompt: str) -> str:
     It returns text in the shapes A-Mem's parsers expect, so the whole pipeline
     runs without a model. Its answers are meaningless; only the plumbing is tested.
     """
+    if prompt.startswith("Answer the question using the memory below."):
+        return "fake answer"
+    if prompt.startswith("A memory already contains this fact:"):
+        new_part = prompt.split("A new fact arrives:")[-1].split("Classify how")[0].lower()
+        if any(w in new_part for w in ("actually", "mistaken", "correction")):
+            return "OPERATION: CORRECT\nREASON: fake"
+        if " also " in new_part:
+            return "OPERATION: ADD\nREASON: fake"
+        return "OPERATION: REPLACE\nREASON: fake"
+    if prompt.startswith("Extract the atomic facts stated in each numbered statement."):
+        return _fake_facts(prompt.split("\nStatements:\n")[-1], batch=True)
+    if prompt.startswith("Extract the atomic facts stated in the text."):
+        return _fake_facts(prompt.split("\nText:\n")[-1], batch=False)
     h = int(hashlib.md5(prompt.encode()).hexdigest(), 16)
     if prompt.startswith("You are an AI memory evolution agent"):
         decision = ["NO_EVOLUTION", "STRENGTHEN", "UPDATE_NEIGHBOR", "STRENGTHEN_AND_UPDATE"][h % 4]
@@ -117,3 +131,26 @@ def fake_completion(prompt: str) -> str:
     if "Short answer:" in prompt:
         return "answer " + format(h % 10**6, "06d")
     return "READY"
+
+
+def _fake_facts(body: str, batch: bool) -> str:
+    """Fake fact extraction: each "X is Y." sentence becomes (X, is, Y)."""
+    blocks = []
+    for n, line in enumerate(body.strip().splitlines(), 1):
+        source = n
+        if batch:
+            m = re.match(r"\s*(\d+)\.\s+(.*)", line)
+            if not m:
+                continue
+            source, line = int(m.group(1)), m.group(2)
+        for sentence in line.split("."):
+            if " is " not in sentence:
+                continue
+            entity, value = sentence.split(" is ", 1)
+            lines = [f"FACT {len(blocks) + 1}:"]
+            if batch:
+                lines.append(f"SOURCE: {source}")
+            lines += [f"ENTITY: {entity.strip()}", "ATTRIBUTE: is", f"VALUE: {value.strip()}",
+                      "VALID_FROM: NONE", "VALID_UNTIL: NONE", "TENSE: UNKNOWN"]
+            blocks.append("\n".join(lines))
+    return "\n\n".join(blocks) if blocks else "NO_FACTS"

@@ -1,24 +1,26 @@
-# Agent-memory baselines: A-Mem and RAG
+# Agent memory: A-Mem, RAG and a temporal fact layer (TSOM)
 
-Two memory systems for persistent LLM agents, evaluated on LoCoMo through one shared agent, tool interface and harness:
+Three memory systems for persistent LLM agents, evaluated through one shared agent, tool interface and harness (LoCoMo, and FactConsolidation for the temporal system):
 
 - **A-Mem** (`system: amem`): Xu et al., NeurIPS 2025. Every conversation turn is stored as a linked note, and new notes can rewrite old ones ("evolution"). We use the authors' code unchanged.
 - **RAG** (`system: rag`): stores raw turns and retrieves the top-k by embedding similarity. No LLM calls when storing, no links, no evolution. Same embedder, same answer prompts, same k as A-Mem, so the only difference is the memory.
+- **TSOM** (`system: tsom`): A-Mem plus an append-only temporal fact layer. Each write also extracts `(entity, attribute, value)` facts, classifies how each relates to what is already stored (`ADD`, `REAFFIRM`, `REPLACE`, `CORRECT`, `ADD_HISTORICAL`) and records supersession without ever deleting rows. Retrieval returns A-Mem's notes plus the facts behind them, marked `[CURRENT]` or `[PAST]`.
 
 ## Repository layout
 
 ```
 tsom/            memory module
-  contracts.py   Note, MemoryOp, RunConfig (JSON schemas: python -m tsom.contracts)
-  store.py       SQLite tables for notes and the operation log
-  memory.py      wraps A-Mem, logs cost and latency of every write
+  contracts.py   Note, Fact, MemoryOp, RunConfig (JSON schemas: python -m tsom.contracts)
+  store.py       SQLite tables: notes, operation log, facts (append-only), note versions
+  memory.py      wraps A-Mem, logs cost and latency of every write; runs the temporal layer when system=tsom
+  temporal/      TSOM: extractor, attribute canonicalizer, update classifier, consolidator, retriever
   rag.py         RAG baseline: raw turns, top-k retrieval, no LLM on write
   tools.py       write_memory, search_memory
   llm.py         provider setup: Ollama, OpenAI, vLLM, or a fake model for tests
   graph.py       NetworkX view of notes and their links
 agent/           the assistant: stores turns, answers questions through the tools
-harness/         LoCoMo replay, F1 and BLEU-1 (same definitions as A-Mem), cost tables
-scripts/         run_baseline.sh, demo.py, inspect_memory.py
+harness/         LoCoMo replay (run_locomo), FactConsolidation replay (run_factcons), F1 and BLEU-1 (same definitions as A-Mem), cost tables
+scripts/         run_baseline.sh, demo.py, demo_temporal.py, inspect_memory.py
 configs/         one JSON file per run
 notebooks/       colab_baseline.ipynb, for running on a free Colab GPU
 third_party/amem A-Mem's code, copied unchanged from a pinned commit (MIT)
@@ -48,6 +50,28 @@ bash scripts/run_baseline.sh                                 # full A-Mem baseli
 bash scripts/run_baseline.sh --config configs/rag_qwen2.5-3b.json   # full RAG baseline
 ```
 
+### TSOM and FactConsolidation
+
+```bash
+python scripts/demo_temporal.py                          # Ali demo with the real model
+python scripts/demo_temporal.py --backend fake           # offline
+python scripts/demo_temporal.py --classifier llm_only    # LLM decides every differing value
+
+python -m harness.run_locomo --config configs/tsom_qwen2.5-3b.json --set max_samples=1 max_questions=20
+python -m harness.run_factcons --config configs/tsom_qwen2.5-3b.json --variant sh --max-samples 1 --max-questions 20
+```
+
+FactConsolidation (MemoryAgentBench, `Conflict_Resolution` split) is loaded from HuggingFace on first use and needs network access once.
+
+#### Update classifier modes
+
+`classifier_mode` in the config (or `--set classifier_mode=llm_only`) controls how a new fact that differs from the stored value is classified:
+
+- `rules_llm` (default): deterministic rules decide first (no existing fact, same value, earlier `valid_from`, past tense before the existing fact, several values already stored, and the optional `seed_multivalued` and `additive_cue` rules). The LLM is asked only for what the rules leave open.
+- `llm_only`: the LLM decides every differing value, including `ADD_HISTORICAL`. An empty key (`ADD`) and an identical value (`REAFFIRM`) still need no call. Unparseable output is retried once, then falls back to the rule-based path. `configs/tsom_llmonly_qwen2.5-3b.json` is ready to use.
+
+In both modes, if the LLM's reply still cannot be read, the operation is `UNRESOLVED`: the current fact stays as it is, the new value is logged but not stored as a fact, and the run summary counts it under fact operations.
+
 On Windows without bash, call the harness directly (activate with `.venv\Scripts\activate`):
 
 ```
@@ -69,6 +93,8 @@ Everything goes to `results/<run_name>/`:
 If a run stops halfway, run the same command again. Finished conversations are skipped.
 
 ## Evaluation
+
+FactConsolidation is scored by substring-match accuracy and F1 (`harness/factcons_answer.py`), with the same answer prompt and retrieval call for every memory system.
 
 We follow A-Mem's own LoCoMo evaluation: all 10 conversations, all five question categories, F1 and BLEU-1, the same answer prompts and the same retrieval k. The baseline uses A-Mem's released reproduction code without changes, so our A-Mem numbers can be checked against Table 1 of their paper for the same model.
 

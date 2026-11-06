@@ -14,5 +14,8 @@ openai
 # Our code
 pydantic>=2
 networkx
+python-dateutil
 tqdm
 pytest
+# FactConsolidation benchmark (MemoryAgentBench)
+datasets

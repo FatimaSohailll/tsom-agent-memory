@@ -30,6 +30,7 @@ from tsom.tools import MemoryTools
 
 log = logging.getLogger("harness")
 REPO_ROOT = Path(__file__).resolve().parent.parent
+WRITE_OPS = ("write", "temporal_write")  # temporal_write exists only for system "tsom"
 
 
 def run(config: RunConfig) -> dict:
@@ -52,11 +53,11 @@ def run(config: RunConfig) -> dict:
             log.info("conversation %d already done, loading", idx)
             rows += [json.loads(line) for line in pred_file.read_text().splitlines()]
             write_ops += [op for op in map(json.loads, ops_file.read_text().splitlines())
-                          if op["op_type"] == "write"]
+                          if op["op_type"] in WRITE_OPS]
             continue
         sample_rows, sample_ops = run_sample(config, llm, idx, sample, out)
         rows += sample_rows
-        write_ops += [op for op in sample_ops if op["op_type"] == "write"]
+        write_ops += [op for op in sample_ops if op["op_type"] in WRITE_OPS]
 
     summary = {
         "run_name": config.run_name,
@@ -112,16 +113,40 @@ def run_sample(config: RunConfig, llm: LLM, idx: int, sample, out: Path):
     return rows, ops
 
 
-def cost_summary(rows, write_ops) -> dict:
+def cost_summary(rows, ops) -> dict:
+    """Cost of memory writes. `ops` may hold "write" and "temporal_write" ops.
+
+    The plain keys describe A-Mem's own write (unchanged, so baselines stay
+    comparable). When temporal ops exist, temporal_* and total_* keys are added;
+    total_* is per memory write: (write + temporal) cost divided by writes.
+    """
+    write_ops = [op for op in ops if op["op_type"] == "write"]
+    temporal_ops = [op for op in ops if op["op_type"] == "temporal_write"]
     if not write_ops:
         return {}
-    return {
+    cost = {
         "writes": len(write_ops),
         "llm_calls_per_write": mean(op["llm_calls"] for op in write_ops),
         "seconds_per_write": mean(op["latency_s"] for op in write_ops),
         "evolution_rate": mean(1.0 if op["evolved"] else 0.0 for op in write_ops),
         "answer_prompt_tokens_per_question": mean(r["prompt_tokens"] for r in rows) if rows else 0,
     }
+    if temporal_ops:
+        n = len(write_ops)
+        fact_ops: dict = {}
+        for op in temporal_ops:
+            for name, count in (op.get("op_counts") or {}).items():
+                fact_ops[name] = fact_ops.get(name, 0) + count
+        cost.update({
+            "temporal_writes": len(temporal_ops),
+            "temporal_llm_calls_per_write": sum(op["llm_calls"] for op in temporal_ops) / n,
+            "temporal_seconds_per_write": sum(op["latency_s"] for op in temporal_ops) / n,
+            "total_llm_calls_per_write": sum(op["llm_calls"] for op in write_ops + temporal_ops) / n,
+            "total_seconds_per_write": sum(op["latency_s"] for op in write_ops + temporal_ops) / n,
+            "temporal_failures": sum(op.get("failures", 0) for op in temporal_ops),
+            "fact_ops": fact_ops,
+        })
+    return cost
 
 
 def to_markdown(summary: dict) -> str:
@@ -138,6 +163,15 @@ def to_markdown(summary: dict) -> str:
                   f"| Seconds per write | {cost['seconds_per_write']:.2f} |",
                   f"| Writes that triggered evolution | {100 * cost['evolution_rate']:.1f}% |",
                   f"| Prompt tokens per question | {cost['answer_prompt_tokens_per_question']:.0f} |"]
+        if "temporal_writes" in cost:
+            ops = ", ".join(f"{k} {v}" for k, v in sorted(cost["fact_ops"].items())) or "none"
+            lines += ["", "| Per memory write | A-Mem write | Temporal | Total |", "|---|---|---|---|",
+                      f"| LLM calls | {cost['llm_calls_per_write']:.2f} | "
+                      f"{cost['temporal_llm_calls_per_write']:.2f} | {cost['total_llm_calls_per_write']:.2f} |",
+                      f"| Seconds | {cost['seconds_per_write']:.2f} | "
+                      f"{cost['temporal_seconds_per_write']:.2f} | {cost['total_seconds_per_write']:.2f} |",
+                      "", f"Fact operations: {ops}. Temporal steps that failed and were skipped: "
+                      f"{cost['temporal_failures']}."]
     return "\n".join(lines) + "\n"
 
 
