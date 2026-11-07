@@ -24,7 +24,8 @@ from typing import List, Optional
 
 from agent.assistant import Assistant
 from harness.run_locomo import load_config
-from harness.scenarios import DEFAULT_SCENARIOS, Scenario, fmt, kn, load_scenarios, save_json, score_answer
+from harness.scenarios import (DEFAULT_SCENARIOS, Scenario, answered, fmt, kn, load_scenarios, save_json,
+                               score_answer)
 from tsom.contracts import RunConfig
 from tsom.llm import LLM
 from tsom.memory import MemorySystem
@@ -116,7 +117,7 @@ def run(config: RunConfig, scenarios_path: str = DEFAULT_SCENARIOS, limit: Optio
     cache = out / "scenarios"
     cache.mkdir(parents=True, exist_ok=True)
     (out / "config.json").write_text(config.model_dump_json(indent=2))
-    scenarios = [s for s in load_scenarios(scenarios_path, include_unreviewed) if s.kind != "conflict"][:limit]
+    scenarios = answered(load_scenarios(scenarios_path, include_unreviewed), limit)
 
     llm = None
     results = []
@@ -148,7 +149,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--config", required=True)
     parser.add_argument("--set", nargs="*", default=[], metavar="KEY=VALUE")
-    parser.add_argument("--limit", type=int)
+    parser.add_argument("--limit", type=int, help="this many scenarios, shared equally across kinds")
     parser.add_argument("--scenarios", default=DEFAULT_SCENARIOS)
     parser.add_argument("--include-unreviewed", action="store_true")
     args = parser.parse_args()

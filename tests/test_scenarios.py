@@ -8,7 +8,9 @@ import pytest
 from pydantic import ValidationError
 
 from harness import run_scenarios
-from harness.scenarios import DEFAULT_SCENARIOS, Scenario, load_scenarios, read_jsonl, score_answer, write_jsonl
+from harness.scenarios import (DEFAULT_SCENARIOS, Scenario, load_scenarios, read_jsonl, score_answer,
+                               write_jsonl)
+from harness.scenarios import answered as subset
 from tsom.contracts import RunConfig
 from tsom.llm import LLM
 
@@ -207,3 +209,23 @@ def test_the_fact_layer_marks_the_new_value_current(tmp_path):
     config = fake_config(tmp_path, "t", system="tsom")
     result = run_scenarios.run_scenario(config, LLM("fake", "fake"), sc)
     assert "[CURRENT] Ali | is | Lahore" in result["answers"][0]["context"]
+
+
+def test_a_limit_is_shared_equally_across_kinds():
+    kinds = ["change"] * 6 + ["cancel"] * 3 + ["additive"] * 2 + ["conflict"] * 4
+    pool = [scenario(id=f"s{i}", kind=k, old=["karachi"] if k in ("change", "cancel") else [])
+            for i, k in enumerate(kinds)]
+    picked = subset(pool, 7)
+    counts = {k: sum(s.kind == k for s in picked) for k in ("change", "cancel", "additive", "conflict")}
+    assert counts == {"change": 3, "cancel": 2, "additive": 2, "conflict": 0}
+    assert [s.id for s in picked] == sorted((s.id for s in picked), key=lambda i: int(i[1:]))
+    assert len(subset(pool)) == 11 and subset(pool, 100) == subset(pool)
+
+
+def test_extraction_and_answering_use_the_same_limited_scenarios(tmp_path):
+    from harness import eval_extraction
+    config = RunConfig(run_name="e", system="tsom", backend="fake", model="fake", output_dir=str(tmp_path))
+    ids = [json.loads(line)["id"] for line in (lambda s: (eval_extraction.run(config, limit=4),
+           (tmp_path / "e" / "extraction_results.jsonl").read_text().splitlines())[1])(None)]
+    assert ids == [s.id for s in subset(load_scenarios(), 4)]
+

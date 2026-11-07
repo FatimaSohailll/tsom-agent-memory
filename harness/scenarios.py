@@ -92,6 +92,25 @@ def load_scenarios(path: str | Path = DEFAULT_SCENARIOS, include_unreviewed: boo
     return [s for s in read_jsonl(path) if s.reviewed or include_unreviewed]
 
 
+def answered(scenarios: List[Scenario], limit: Optional[int] = None) -> List[Scenario]:
+    """The scenarios that get questions (conflict ones are skipped). With a limit, the kinds share it
+    equally, taking each kind's scenarios in file order, so a small run still covers every kind;
+    a kind with too few scenarios leaves its share to the others. The order of the file is kept."""
+    kept = [s for s in scenarios if s.kind != "conflict"]
+    if limit is None or limit >= len(kept):
+        return kept
+    by_kind: dict = {}
+    for s in kept:
+        by_kind.setdefault(s.kind, []).append(s)
+    chosen, rounds = set(), 0
+    while len(chosen) < limit:
+        for group in by_kind.values():
+            if rounds < len(group) and len(chosen) < limit:
+                chosen.add(group[rounds].id)
+        rounds += 1
+    return [s for s in kept if s.id in chosen]
+
+
 # ---- answer scoring ----
 
 _PUNCT = str.maketrans({c: " " for c in string.punctuation})

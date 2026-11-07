@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from harness.run_locomo import load_config
-from harness.scenarios import (DEFAULT_SCENARIOS, Scenario, ScenarioFact, fmt, kn, load_scenarios,
+from harness.scenarios import (DEFAULT_SCENARIOS, Scenario, ScenarioFact, answered, fmt, kn, load_scenarios,
                                normalise, save_json)
 from tsom.contracts import RunConfig
 from tsom.llm import LLM
@@ -86,7 +86,9 @@ def run(config: RunConfig, scenarios_path: str = DEFAULT_SCENARIOS, limit: Optio
     llm = LLM.from_config(config)
     llm.check()
     extractor = FactExtractor(llm)
-    scenarios = load_scenarios(scenarios_path, include_unreviewed)[:limit]
+    scenarios = load_scenarios(scenarios_path, include_unreviewed)
+    if limit is not None:  # the same scenarios run_scenarios answers with this limit
+        scenarios = answered(scenarios, limit)
     results = [evaluate_scenario(extractor, s) for s in scenarios]
     summary = {"run_name": config.run_name, "model": config.model, "reviewed_only": not include_unreviewed,
                **summarise(results)}
@@ -102,7 +104,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--config", required=True)
     parser.add_argument("--set", nargs="*", default=[], metavar="KEY=VALUE")
-    parser.add_argument("--limit", type=int)
+    parser.add_argument("--limit", type=int, help="the same scenarios run_scenarios answers with this limit")
     parser.add_argument("--scenarios", default=DEFAULT_SCENARIOS)
     parser.add_argument("--include-unreviewed", action="store_true")
     args = parser.parse_args()
