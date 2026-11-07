@@ -108,6 +108,7 @@ def run_sample(config: RunConfig, llm: LLM, idx: int, sample, out: Path):
             "f1": f1(result["prediction"], gold), "bleu1": bleu1(result["prediction"], gold),
             "prompt_tokens": result["prompt_tokens"],
             "completion_tokens": result["completion_tokens"],
+            "tools": result["tools"], "context": result["context"],  # the trace for this answer
         })
 
     ops = [op.model_dump() for op in memory.store.ops()]

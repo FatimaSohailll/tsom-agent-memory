@@ -139,3 +139,31 @@ def test_locomo_runs_use_the_flag(tmp_path, monkeypatch):
                              max_sessions=1, max_questions=1, output_dir=str(tmp_path),
                              use_fact_history=True))
     assert built[0]["use_fact_history"] is True
+
+
+def test_the_answer_lists_the_tools_it_used():
+    llm = Router("TOOL: get_fact_history\nENTITY: Alice")
+    tools = agent(llm).answer("Where was Alice before?", 1, "Lahore")["tools"]
+    assert tools == [{"tool": "search_memory", "query": "Alice, is", "k": 10},
+                     {"tool": "get_fact_history", "entity": "Alice", "found": True}]
+
+
+def test_plain_search_lists_only_search():
+    assert [t["tool"] for t in agent(Router()).answer("Where is Alice?", 1, "Karachi")["tools"]] == ["search_memory"]
+    assert [t["tool"] for t in agent(Router(), False).answer("Where is Alice?", 1, "Karachi")["tools"]] == ["search_memory"]
+
+
+def test_scenario_results_keep_tools_and_the_final_fact_store(tmp_path):
+    sc = run_scenarios.load_scenarios()[0]
+    result = run_scenarios.run_scenario(config(), LLM("fake", "fake"), sc)
+    assert result["answers"][0]["tools"][0]["tool"] == "search_memory"
+    assert all({"entity", "attribute", "value", "status", "operation", "step"} <= set(f) for f in result["facts"])
+    assert run_scenarios.run_scenario(config("rag"), LLM("fake", "fake"), sc)["facts"] == []
+
+
+def test_locomo_rows_keep_the_trace(tmp_path):
+    run_locomo.run(RunConfig(run_name="s", system="tsom", backend="fake", model="fake", max_samples=1,
+                             max_sessions=1, max_questions=2, output_dir=str(tmp_path)))
+    import json
+    row = json.loads((tmp_path / "s" / "sample_0.jsonl").read_text().splitlines()[0])
+    assert row["tools"][0]["tool"] == "search_memory" and "context" in row

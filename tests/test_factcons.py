@@ -192,3 +192,11 @@ def test_multi_hop_summary_is_labelled_an_estimate(tmp_path):
     config = cfg("rag", tmp_path, max_samples=1, max_questions=1)
     run(config, "mh", "6k", chunk=3, samples=load_samples("mh", "6k", loader=lambda: ROWS))
     assert "estimate" in (tmp_path / "fc_rag" / "summary_factcons_mh_6k.md").read_text()
+
+
+def test_rows_keep_the_context_and_tool_call(tmp_path):
+    config = cfg("tsom", tmp_path, max_samples=1, max_questions=1)
+    run(config, "sh", "6k", chunk=3, samples=load_samples("sh", "6k", loader=lambda: ROWS))
+    row = json.loads((tmp_path / "fc_tsom" / "sample_sh_6k.jsonl").read_text().splitlines()[0])
+    assert row["tools"] == [{"tool": "search_memory", "query": "Where is Alice?", "k": 10}]
+    assert "[CURRENT] Alice" in row["context"]

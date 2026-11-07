@@ -151,6 +151,8 @@ def run_sample(config: RunConfig, llm: LLM, sample: dict, chunk: int, out: Path)
             "prediction": result["prediction"], **score(result["prediction"], golds),
             "prompt_tokens": result["prompt_tokens"],
             "completion_tokens": result["completion_tokens"],
+            "tools": [{"tool": "search_memory", "query": question, "k": config.retrieve_k}],
+            "context": result["context"],  # the trace for this answer
         }, sample))
 
     ops = [op.model_dump() for op in memory.store.ops()]

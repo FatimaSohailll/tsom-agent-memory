@@ -48,8 +48,9 @@ def run_scenario(config: RunConfig, llm: LLM, scenario: Scenario) -> dict:
     for q in (scenario.question, scenario.question_alt):
         result = agent.answer(q, 4, scenario.current[0])
         answers.append({"question": q, "prediction": result["prediction"], "context": result["context"],
-                        **score_answer(result["prediction"], scenario)})
+                        "tools": result["tools"], **score_answer(result["prediction"], scenario)})
     writes = [op for op in memory.store.ops() if op.op_type == "write"]
+    facts = final_facts(memory.store, scenario.id)
     memory.store.close()
     main = answers[0]
     return {
@@ -59,7 +60,16 @@ def run_scenario(config: RunConfig, llm: LLM, scenario: Scenario) -> dict:
         "retention": main["retention"], "consistent": answers[0]["verdict"] == answers[1]["verdict"],
         "writes": len(writes), "write_llm_calls": sum(op.llm_calls for op in writes),
         "write_seconds": sum(op.latency_s for op in writes),
+        "facts": facts,
     }
+
+
+def final_facts(store, sample_id: str) -> List[dict]:
+    """Every fact the memory ended with, in the order learned: the state the answers came from."""
+    facts = [f for key in store.entity_keys(sample_id) for f in store.entity_facts(sample_id, key)]
+    return [{"entity": f.entity, "attribute": f.attribute, "value": f.value, "status": f.status,
+             "operation": f.operation, "step": f.observed_at, "session": f.observed_time}
+            for f in sorted(facts, key=lambda f: f.observed_at)]
 
 
 def summarise_scenarios(results: List[dict]) -> dict:

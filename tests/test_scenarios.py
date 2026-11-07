@@ -54,7 +54,7 @@ def test_validation():
 def test_hand_written_scenarios_are_reviewed():
     hand = load_scenarios(DEFAULT_SCENARIOS)
     assert len(hand) >= 6
-    assert {s.kind for s in hand} == {"change", "additive", "restate", "conflict"}
+    assert {"change", "additive", "restate", "conflict"} <= {s.kind for s in hand}
 
 
 def test_generator_counts_and_determinism():

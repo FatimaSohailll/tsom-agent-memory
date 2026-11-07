@@ -49,8 +49,11 @@ class Assistant:
         start = time.perf_counter()
         keywords = self._query_keywords(question)
         context = self.tools.call("search_memory", query=keywords, k=self.retrieve_k)["notes"]
+        tools = [{"tool": "search_memory", "query": keywords, "k": self.retrieve_k}]
         if self.use_fact_history:
-            history = self._chosen_history(question)
+            entity, history = self._chosen_history(question)
+            if entity is not None:
+                tools.append({"tool": "get_fact_history", "entity": entity, "found": bool(history)})
             if history:
                 context = f"Fact history:\n{history}\n\n{context}"
         prompt, temperature = self._answer_prompt(question, category, gold, context)
@@ -65,16 +68,18 @@ class Assistant:
             prompt_tokens=used.prompt_tokens, completion_tokens=used.completion_tokens,
             latency_s=time.perf_counter() - start,
         ))
-        return {"prediction": parse_plain_text_answer(raw), "context": context,
+        return {"prediction": parse_plain_text_answer(raw), "context": context, "tools": tools,
                 "prompt_tokens": used.prompt_tokens, "completion_tokens": used.completion_tokens}
 
-    def _chosen_history(self, question: str) -> str:
-        """The history the model asks for. An unusable reply means plain search."""
+    def _chosen_history(self, question: str):
+        """(entity, history) the model asks for; (None, "") when it chooses plain search
+        or its reply cannot be used."""
         reply = self.llm.get_completion(TOOL_PROMPT.format(question=question), temperature=0.0)
         entity = _ENTITY.search(reply)
         if not _HISTORY.search(reply) or not entity:
-            return ""
-        return self.tools.call("get_fact_history", entity=entity.group(1).strip())["facts"]
+            return None, ""
+        name = entity.group(1).strip()
+        return name, self.tools.call("get_fact_history", entity=name)["facts"]
 
     def _query_keywords(self, question: str) -> str:
         prompt = f"""Given the following question, generate several keywords separated by commas.
