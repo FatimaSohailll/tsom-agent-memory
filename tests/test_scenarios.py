@@ -73,6 +73,40 @@ def test_generator_counts_and_determinism():
             assert f.value.lower() in text, (d.id, f.value)
 
 
+def test_the_original_drafts_never_change():
+    original = [d.model_dump() for d in generate_scenarios.generate()]
+    assert [d.model_dump() for d in generate_scenarios.generate_all()[:len(original)]] == original
+
+
+def test_the_extra_batch_adds_cancellations_and_unique_ids():
+    drafts = generate_scenarios.generate_all()
+    kinds = [d.kind for d in drafts]
+    expected = {k: generate_scenarios.COUNTS.get(k, 0) + generate_scenarios.EXTRA_COUNTS.get(k, 0)
+                for k in set(generate_scenarios.COUNTS) | set(generate_scenarios.EXTRA_COUNTS)}
+    assert {k: kinds.count(k) for k in set(kinds)} == expected
+    assert len({d.id for d in drafts}) == len(drafts)
+    assert len({(d.facts[0].speaker, d.facts[0].value, d.facts[-1].value, d.question) for d in drafts}) == len(drafts)
+    for d in drafts:
+        for f in d.facts:
+            text = " ".join(t.text for t in d.sessions[f.session].turns).lower()
+            assert f.value.lower() in text, (d.id, f.value)
+
+
+def test_a_cancelled_booking_is_scored_as_current_or_stale():
+    cancel = next(d for d in generate_scenarios.generate_all() if d.kind == "cancel")
+    booking = cancel.facts[0].value
+    assert score_answer(f"The {booking} was cancelled.", cancel)["verdict"] == "correct"
+    assert score_answer(f"The {booking} is confirmed for Friday.", cancel)["verdict"] == "stale"
+    assert score_answer("It was called off.", cancel)["correct"]
+
+
+def test_regenerating_keeps_hand_edits_and_reviewed_marks():
+    edited = generate_scenarios.generate()[0].model_copy(update={"question": "edited?", "reviewed": True})
+    merged = generate_scenarios.merge([edited], generate_scenarios.generate_all())
+    assert merged[0].question == "edited?" and merged[0].reviewed
+    assert len(merged) == len(generate_scenarios.generate_all())
+
+
 def test_paraphrase_never_drops_values():
     class Rewriter(LLM):
         def __init__(self):

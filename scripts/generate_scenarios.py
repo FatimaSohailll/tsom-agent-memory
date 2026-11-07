@@ -6,8 +6,10 @@
 Drafts have reviewed=false. Check them with scripts/review_scenarios.py, which
 copies accepted ones into data/scenarios/change_scenarios.jsonl.
 
-With the 6 hand-written scenarios (3 change, 1 additive, 1 restate, 1 conflict)
-the default counts give 40 in total: 24 change, 8 additive, 4 restate, 4 conflict.
+The first batch (COUNTS, seed 42) is the original 34 drafts and never changes. A second batch
+(EXTRA_COUNTS, seed 43) adds more, including cancelled bookings, numbered after the first.
+With the 6 hand-written scenarios that gives 210. Drafts already in the file keep their text and
+reviewed mark; only new ids are added, so hand edits are never overwritten.
 --paraphrase only rewrites turn text; a rewrite that loses any fact value is discarded.
 """
 
@@ -19,10 +21,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from harness.scenarios import DRAFTS, Scenario, write_jsonl  # noqa: E402
+from harness.scenarios import DRAFTS, Scenario, read_jsonl, write_jsonl  # noqa: E402
 
 SEED = 42
 COUNTS = {"change": 21, "additive": 7, "restate": 3, "conflict": 3}
+EXTRA_SEED = 43
+EXTRA_COUNTS = {"change": 60, "cancel": 30, "additive": 40, "restate": 30, "conflict": 10}
 
 NAMES = ["Ali", "Hina", "Bilal", "Zoya", "Ayesha", "Danish", "Usman", "Fatima", "Sana", "Omar",
          "Maryam", "Hamza", "Iqra", "Saad", "Noor", "Raza", "Amna", "Faisal", "Mehwish", "Kamran"]
@@ -42,6 +46,11 @@ PETS = ["dog", "cat", "parrot", "rabbit", "hamster", "turtle"]
 SKILLS = ["guitar", "python", "urdu calligraphy", "photoshop", "sign language", "public speaking"]
 ALLERGIES = ["peanuts", "shellfish", "dust", "pollen", "gluten", "penicillin"]
 KIDS = ["Ahmed", "Zara", "Ibrahim", "Hania", "Musa", "Alina"]
+BOOKINGS = ["flight to Dubai", "hotel room in Murree", "table at Monal", "dentist appointment", "trip to Hunza",
+            "concert tickets", "car rental", "train to Lahore", "wedding hall booking", "gym membership"]
+# A cancelled booking is current when the answer says so; it is stale when it says the booking still stands.
+CANCELLED = ("cancelled", ["canceled", "called off"])
+STILL_ON = ["still booked", "still on", "is booked", "confirmed", "going ahead", "is scheduled"]
 
 OPENERS = ["Hey {name}, how have you been?", "Hi {name}! What's new?", "Good to see you, {name}. How are things?"]
 REPLIES = ["That's great to hear!", "Oh nice, tell me more.", "Wow, good for you.", "Interesting!"]
@@ -152,7 +161,17 @@ TEMPLATES = [
          q=["What is {name}'s job now?"], q_alt=["What does {name} do for a living?"]),
 ]
 
-LABELS = {"change": "corrective", "additive": "additive", "restate": "redundant", "conflict": "contradictory"}
+for template in (
+    dict(kind="cancel", predicate="has_booking", pick=lambda r: (r.choice(BOOKINGS), CANCELLED),
+         first=["I booked a {v} for next Friday.", "I just made a booking: a {v} for the weekend."],
+         later={"explicit": ["I cancelled the {v}, plans changed.", "The {v} is cancelled, I couldn't make it work."],
+                "implicit": ["Bad news, the {v} got cancelled.", "Sadly they cancelled my {v} at the last minute."]},
+         q=["What is the status of {name}'s {v}?"], q_alt=["Is {name}'s {v} still going ahead?"]),
+):
+    TEMPLATES.append(template)
+
+LABELS = {"change": "corrective", "cancel": "corrective", "additive": "additive", "restate": "redundant",
+          "conflict": "contradictory"}
 
 
 def _two(rng, pool):
@@ -170,9 +189,14 @@ def _fmt_date(d: date, rng) -> str:
     return f"{hour}:{minute:02d} {rng.choice(['am', 'pm'])} on {d.day} {d.strftime('%B')}, {d.year}"
 
 
-def make(template, idx, rng) -> Scenario:
-    name, other = rng.sample(NAMES, 2)
-    (v, v_alias), (w, w_alias) = map(_value, template["pick"](rng))
+def make(template, idx, rng, avoid=None) -> Scenario:
+    for _ in range(50):  # avoid repeating a person and values already used with this template
+        name, other = rng.sample(NAMES, 2)
+        (v, v_alias), (w, w_alias) = map(_value, template["pick"](rng))
+        if avoid is None or (id(template), name, v, w) not in avoid:
+            break
+    if avoid is not None:
+        avoid.add((id(template), name, v, w))
     style = rng.choice(sorted(template["later"]))
     fill = lambda text: text.format(v=v, w=w, name=name)  # noqa: E731
     first, later = fill(rng.choice(template["first"])), fill(rng.choice(template["later"][style]))
@@ -197,10 +221,12 @@ def make(template, idx, rng) -> Scenario:
     kind, pred, last = template["kind"], template["predicate"], len(sessions) - 1
     facts = [{"speaker": name, "predicate": pred, "value": v, "session": 0, "expected_label": "additive"},
              {"speaker": name, "predicate": pred, "value": w, "session": last,
-              "expected_label": LABELS[kind], "replaces": v if kind == "change" else None}]
+              "expected_label": LABELS[kind], "replaces": v if kind in ("change", "cancel") else None}]
     lower = lambda xs: [x.lower() for x in xs]  # noqa: E731
     if kind == "change":
         current, old = lower([w] + w_alias), lower([v] + v_alias)
+    elif kind == "cancel":  # naming the booking is fine; saying it still stands is stale
+        current, old = lower([w] + w_alias), STILL_ON
     elif kind == "additive":
         current, old = lower([v, w]), []
     elif kind == "restate":
@@ -212,14 +238,29 @@ def make(template, idx, rng) -> Scenario:
                     current=current, old=old)
 
 
-def generate(counts=COUNTS, seed=SEED):
+def generate(counts=COUNTS, seed=SEED, start=None, avoid=None):
+    """Drafts for `counts`, numbered per kind from start[kind] + 1."""
     rng = random.Random(seed)
     out = []
     for kind, n in counts.items():
         templates = [t for t in TEMPLATES if t["kind"] == kind]
+        first = (start or {}).get(kind, 0)
         for i in range(n):
-            out.append(make(templates[i % len(templates)], i + 1, rng))
+            out.append(make(templates[(first + i) % len(templates)], first + i + 1, rng, avoid))
     return out
+
+
+def generate_all():
+    """The original batch, unchanged, then the extra batch numbered after it."""
+    avoid = set()
+    first = generate(avoid=avoid)
+    return first + generate(EXTRA_COUNTS, EXTRA_SEED, start=COUNTS, avoid=avoid)
+
+
+def merge(existing, new):
+    """Existing drafts as they are (hand edits, reviewed marks), then drafts with new ids."""
+    ids = {s.id for s in existing}
+    return existing + [s for s in new if s.id not in ids]
 
 
 def paraphrase(scenarios, llm):
@@ -250,14 +291,16 @@ def main():
     parser.add_argument("--model", default="qwen2.5:3b")
     args = parser.parse_args()
 
-    scenarios = generate()
+    existing = read_jsonl(args.out)
+    new = [s for s in generate_all() if s.id not in {e.id for e in existing}]
     if args.paraphrase:
         from tsom.llm import LLM
         llm = LLM(args.backend, args.model)
         llm.check()
-        scenarios = paraphrase(scenarios, llm)
+        new = paraphrase(new, llm)
+    scenarios = merge(existing, new)
     write_jsonl(args.out, scenarios)
-    print(f"wrote {len(scenarios)} drafts to {args.out} using {len(TEMPLATES)} templates")
+    print(f"{len(scenarios)} drafts in {args.out} ({len(new)} new) from {len(TEMPLATES)} templates")
 
 
 if __name__ == "__main__":

@@ -19,7 +19,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SCENARIOS = "data/scenarios/change_scenarios.jsonl"
 DRAFTS = "data/scenarios/drafts.jsonl"
 
-Kind = Literal["change", "additive", "restate", "conflict"]
+Kind = Literal["change", "cancel", "additive", "restate", "conflict"]
+HAS_OLD = ("change", "cancel")  # kinds where an earlier value stops being true
 Label = Literal["additive", "corrective", "redundant", "contradictory"]
 
 
@@ -60,10 +61,10 @@ class Scenario(BaseModel):
                 raise ValueError(f"{self.id}: fact session {f.session} out of range")
         if any(a != a.lower() for a in self.current + self.old):
             raise ValueError(f"{self.id}: current/old answers must be lowercase")
-        if self.kind == "change" and not self.old:
-            raise ValueError(f"{self.id}: a change scenario needs old answers")
-        if self.kind != "change" and self.old:
-            raise ValueError(f"{self.id}: only change scenarios have old answers")
+        if self.kind in HAS_OLD and not self.old:
+            raise ValueError(f"{self.id}: a {self.kind} scenario needs old answers")
+        if self.kind not in HAS_OLD and self.old:
+            raise ValueError(f"{self.id}: only change and cancel scenarios have old answers")
         return self
 
 
