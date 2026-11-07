@@ -11,7 +11,7 @@ import time
 import uuid
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 def new_id() -> str:
@@ -93,15 +93,32 @@ class RunConfig(BaseModel):
                                          "hobbies", "member_of"]
     # tsom only: "rules_llm" = deterministic rules first, LLM for what they leave open;
     # "llm_only" = the LLM decides every differing value (only an empty key -> ADD and
-    # an identical value -> REAFFIRM are settled without it).
-    classifier_mode: Literal["rules_llm", "llm_only"] = "rules_llm"
+    # an identical value -> REAFFIRM are settled without it);
+    # "append_only" = no classifier: every differing value is added beside what is stored (Gap 1 off).
+    classifier_mode: Literal["rules_llm", "llm_only", "append_only"] = "rules_llm"
+    # tsom only: False turns the time-scoped retriever off (Gap 3 off): every question is treated as
+    # asking about now, so only active facts are shown, with no past-period check or date filtering.
+    time_scoped_retrieval: bool = True
     temperature_c5: float = 0.5  # A-Mem's default for adversarial questions
+    # If set, every LLM call uses this, including A-Mem's. None keeps each call's own value.
+    temperature: Optional[float] = None
     seed: int = 42
+    send_seed: bool = False  # also send seed to the model, not just to the answer-order shuffle
+    # tsom only: the agent chooses at question time whether to call get_fact_history.
+    use_fact_history: bool = False
     dataset: str = "data/locomo10.json"
     max_samples: Optional[int] = None  # None = all 10 conversations
+    # LoCoMo only: the conversations to run, by index (0-9). None = the first max_samples.
+    conversations: Optional[List[int]] = None
     max_sessions: Optional[int] = None  # None = every session
     max_questions: Optional[int] = None  # per conversation; None = all
     output_dir: str = "results"
+
+    @model_validator(mode="after")
+    def _fact_history_needs_facts(self):
+        if self.use_fact_history and self.system != "tsom":
+            raise ValueError("use_fact_history needs system='tsom'")
+        return self
 
 
 if __name__ == "__main__":

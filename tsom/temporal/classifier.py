@@ -34,7 +34,7 @@ class UpdateClassifier:
                  additive_cue: bool = False,
                  multivalued_attributes: Sequence[str] = DEFAULT_MULTIVALUED,
                  mode: str = "rules_llm"):
-        if mode not in ("rules_llm", "llm_only"):
+        if mode not in ("rules_llm", "llm_only", "append_only"):
             raise ValueError(f"unknown classifier mode: {mode!r}")
         self.mode = mode
         self.llm = llm  # anything with get_completion(prompt, temperature) -> str
@@ -46,7 +46,8 @@ class UpdateClassifier:
         self.op_counts: Counter = Counter()
         # How the latest classify() call was decided: {"op", "source", "reason", "raw"} where
         # source is the rule's name (no_existing_fact, same_value, valid_from_earlier,
-        # past_before_existing, learned_multivalued, seed_multivalued, additive_cue) or "LLM",
+        # past_before_existing, learned_multivalued, seed_multivalued, additive_cue,
+        # append_only) or "LLM",
         # and raw is the LLM response (None when a rule decided).
         self.last_decision: dict = {}
 
@@ -76,6 +77,8 @@ class UpdateClassifier:
         for f in old:
             if norm(f.value) == norm(new["value"]):
                 return "REAFFIRM", [f], "same_value", "rule: same value already stored", None
+        if self.mode == "append_only":
+            return "ADD", old, "append_only", "baseline: every value is added, nothing is retired", None
         if self.mode == "llm_only":
             result = self._ask_llm_only(old, new, observed_at, observed_time)
             if result is not None:

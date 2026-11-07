@@ -27,7 +27,8 @@ from pathlib import Path
 from statistics import mean
 from typing import Callable, Dict, List, Optional, Tuple
 
-from harness.factcons_answer import answer_question, score
+from harness.contradictions import contradiction_line, read_curve, summarise_curves
+from harness.factcons_answer import answer_question, mark_stale, score, stale_counts
 from harness.run_locomo import cost_summary
 from tsom.contracts import RunConfig
 from tsom.llm import LLM
@@ -96,23 +97,28 @@ def run(config: RunConfig, variant: str, size: str = "6k", chunk: int = 20,
     if samples is None:
         samples = load_samples(variant, size)
     samples = samples[: config.max_samples]
-    llm = LLM(config.backend, config.model, config.base_url)
+    llm = LLM.from_config(config)
     llm.check()
 
-    rows, ops = [], []
+    rows, ops, curves = [], [], {}
     for sample in samples:
         tag = sample["tag"]
         pred_file, ops_file = out / f"sample_{tag}.jsonl", out / f"ops_sample_{tag}.jsonl"
         if pred_file.exists() and ops_file.exists():
             log.info("%s already done, loading", tag)
-            rows += [json.loads(line) for line in pred_file.read_text().splitlines()]
+            rows += [mark_stale(json.loads(line), sample)
+                     for line in pred_file.read_text().splitlines()]
             ops += [json.loads(line) for line in ops_file.read_text().splitlines()]
-            continue
-        sample_rows, sample_ops = run_sample(config, llm, sample, chunk, out)
-        rows += sample_rows
-        ops += sample_ops
+        else:
+            sample_rows, sample_ops = run_sample(config, llm, sample, chunk, out)
+            rows += sample_rows
+            ops += sample_ops
+        if config.system == "tsom":
+            curves[tag] = read_curve(out / f"memory_sample_{tag}.sqlite", tag,
+                                     config.multivalued_attributes)
 
     summary = summarise_run(config, variant, size, chunk, rows, ops)
+    summary["contradictions"] = summarise_curves(curves)
     stem = f"summary_factcons_{variant}_{size}"
     (out / f"{stem}.json").write_text(json.dumps(summary, indent=2))
     (out / f"{stem}.md").write_text(to_markdown(summary))
@@ -140,12 +146,14 @@ def run_sample(config: RunConfig, llm: LLM, sample: dict, chunk: int, out: Path)
     pairs = list(zip(sample["questions"], sample["answers"]))[: config.max_questions]
     for qid, (question, golds) in enumerate(pairs):
         result = answer_question(memory, llm, question, config.retrieve_k)
-        rows.append({
+        rows.append(mark_stale({
             "sample": tag, "qid": qid, "question": question, "gold": golds,
             "prediction": result["prediction"], **score(result["prediction"], golds),
             "prompt_tokens": result["prompt_tokens"],
             "completion_tokens": result["completion_tokens"],
-        })
+            "tools": [{"tool": "search_memory", "query": question, "k": config.retrieve_k}],
+            "context": result["context"],  # the trace for this answer
+        }, sample))
 
     ops = [op.model_dump() for op in memory.store.ops()]
     memory.store.close()
@@ -179,9 +187,11 @@ def summarise_run(config: RunConfig, variant: str, size: str, chunk: int,
         "retrieve_k": config.retrieve_k, "samples": len(by_sample), "questions": len(rows),
         "accuracy": mean(1.0 if r["correct"] else 0.0 for r in rows) if rows else 0.0,
         "f1": mean(r["f1"] for r in rows) if rows else 0.0,
+        "stale": stale_counts(rows),
         "per_sample": {tag: {"n": len(rs),
                              "accuracy": mean(1.0 if r["correct"] else 0.0 for r in rs),
-                             "f1": mean(r["f1"] for r in rs)} for tag, rs in by_sample.items()},
+                             "f1": mean(r["f1"] for r in rs),
+                             **stale_counts(rs)} for tag, rs in by_sample.items()},
         "cost": cost,
         # TSOM only: fact operation counts and temporal steps that failed and were skipped
         "tsom": {"fact_ops": cost.get("fact_ops", {}),
@@ -195,8 +205,12 @@ def to_markdown(s: dict) -> str:
              "| Sample | n | Accuracy | F1 |", "|---|---|---|---|"]
     for tag, v in s["per_sample"].items():
         lines.append(f"| {tag} | {v['n']} | {v['accuracy']:.3f} | {v['f1']:.3f} |")
-    c = s["cost"]
+    c, stale = s["cost"], s["stale"]
+    note = " Multi-hop estimate: only stale values of the last fact are counted." if s["variant"] == "mh" else ""
     lines += [f"| **All** | {s['questions']} | **{s['accuracy']:.3f}** | {s['f1']:.3f} |", "",
+              f"Stale answers: {stale['stale_answers']} of {stale['changed_questions']} questions "
+              f"whose fact changed ({stale['stale_rate']:.3f}).{note}", "",
+              *([contradiction_line(s["contradictions"]), ""] if s["contradictions"] else []),
               "| Cost | Value |", "|---|---|",
               f"| Ingest LLM calls | {c['ingest_llm_calls']} |",
               f"| Ingest tokens (prompt / completion) | {c['ingest_prompt_tokens']} / {c['ingest_completion_tokens']} |",

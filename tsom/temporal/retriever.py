@@ -86,7 +86,9 @@ class TemporalRetriever:
         amem = self.memory.amem
         store = self.memory.store
         sid = self.memory.sample_id or ""
-        query_type, target = classify_query(query)
+        # With time-scoped retrieval off (Gap 3 off), every question is about now.
+        scoped = getattr(self.memory.config, "time_scoped_retrieval", True)
+        query_type, target = classify_query(query) if scoped else ("current", None)
 
         notes_str = amem.find_related_memories_raw(query, k=k)
         ids = list(amem.memories.keys())
@@ -122,6 +124,12 @@ class TemporalRetriever:
         else:
             kept_lines = [line for group in lines.values() for line in group]
         return {"notes": notes_str, "facts": "\n".join(kept_lines), "query_type": query_type}
+
+    def history(self, entity: str) -> str:
+        """Every fact held about `entity`, oldest first, without retracted ones."""
+        store, sid = self.memory.store, self.memory.sample_id or ""
+        facts = [f for f in store.entity_facts(sid, entity) if f.status != "retracted"]
+        return "\n".join(self._format(store, sid, f) for f in facts[-self.max_facts:])
 
     def _scores(self, query: str, shown: Dict[Tuple[str, str], List[Fact]]) -> Dict[Tuple[str, str], float]:
         """Each group's best cosine similarity to the query, with the embedder A-Mem uses."""
@@ -165,5 +173,10 @@ class TemporalRetriever:
         if f.status == "active":
             return f"[CURRENT] {f.entity} | {f.attribute} | {f.value} (step {f.observed_at})"
         later = store.get_fact(f.superseded_by) if f.superseded_by else None
-        replaced = f", replaced at step {later.observed_at}" if later else ""
-        return f"[PAST] {f.entity} | {f.attribute} | {f.value} (step {f.observed_at}{replaced})"
+        if later is None:
+            note = ""
+        elif f.fact_id in later.supersedes:
+            note = f", replaced at step {later.observed_at}"
+        else:  # learned late: it ended before `later`, which never replaced it
+            note = f", earlier than the value from step {later.observed_at}"
+        return f"[PAST] {f.entity} | {f.attribute} | {f.value} (step {f.observed_at}{note})"

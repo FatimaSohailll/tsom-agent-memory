@@ -41,3 +41,23 @@ def test_tools_match_specs():
     note_id = tools.call("write_memory", turn="Speaker Ali says : I live in Karachi", time="1 May 2023")["note_id"]
     assert memory.store.get_note(note_id) is not None
     assert "Karachi" in tools.call("search_memory", query="Karachi", k=1)["notes"]
+
+
+def test_locomo_runs_only_the_chosen_conversations(tmp_path):
+    from harness.run_locomo import load_config
+    config = load_config("configs/smoke_fake.json", ["conversations=[2,0]", "max_sessions=1", "max_questions=2",
+                                                     f"output_dir={tmp_path}", "run_name=pick"])
+    assert config.conversations == [2, 0]
+    summary = run(config)
+    assert summary["conversation_ids"] == [2, 0] and summary["conversations"] == 2
+    assert {p.name for p in (tmp_path / "pick").glob("sample_*.jsonl")} == {"sample_0.jsonl", "sample_2.jsonl"}
+    rows = [json.loads(line) for line in (tmp_path / "pick" / "sample_2.jsonl").read_text().splitlines()]
+    assert {r["sample"] for r in rows} == {2}
+
+
+def test_an_unknown_conversation_is_refused(tmp_path):
+    import pytest
+    config = RunConfig(run_name="bad", backend="fake", model="fake", conversations=[10], output_dir=str(tmp_path))
+    with pytest.raises(ValueError, match="no LoCoMo conversation"):
+        run(config)
+

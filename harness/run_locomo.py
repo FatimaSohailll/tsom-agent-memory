@@ -20,6 +20,7 @@ from pathlib import Path
 from statistics import mean
 
 from agent.assistant import Assistant
+from harness.contradictions import contradiction_line, read_curve, summarise_curves
 from harness.metrics import bleu1, f1, summarise
 from tsom.amem_bridge import load_locomo_dataset
 from tsom.contracts import RunConfig
@@ -38,15 +39,22 @@ def run(config: RunConfig) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     (out / "config.json").write_text(config.model_dump_json(indent=2))
 
-    llm = LLM(config.backend, config.model, config.base_url)
+    llm = LLM.from_config(config)
     llm.check()
     dataset = Path(config.dataset)
     if not dataset.is_absolute() and not dataset.exists():
         dataset = REPO_ROOT / dataset  # relative paths in configs are from the repo root
-    samples = load_locomo_dataset(str(dataset))[: config.max_samples]
+    everything = load_locomo_dataset(str(dataset))
+    if config.conversations is not None:
+        unknown = [i for i in config.conversations if not 0 <= i < len(everything)]
+        if unknown:
+            raise ValueError(f"no LoCoMo conversation {unknown}; there are {len(everything)} (0-{len(everything) - 1})")
+        chosen = [(i, everything[i]) for i in config.conversations]
+    else:
+        chosen = list(enumerate(everything[: config.max_samples]))
 
-    rows, write_ops = [], []
-    for idx, sample in enumerate(samples):
+    rows, write_ops, curves = [], [], {}
+    for idx, sample in chosen:
         pred_file = out / f"sample_{idx}.jsonl"
         ops_file = out / f"ops_sample_{idx}.jsonl"
         if pred_file.exists() and ops_file.exists():
@@ -54,19 +62,24 @@ def run(config: RunConfig) -> dict:
             rows += [json.loads(line) for line in pred_file.read_text().splitlines()]
             write_ops += [op for op in map(json.loads, ops_file.read_text().splitlines())
                           if op["op_type"] in WRITE_OPS]
-            continue
-        sample_rows, sample_ops = run_sample(config, llm, idx, sample, out)
-        rows += sample_rows
-        write_ops += [op for op in sample_ops if op["op_type"] in WRITE_OPS]
+        else:
+            sample_rows, sample_ops = run_sample(config, llm, idx, sample, out)
+            rows += sample_rows
+            write_ops += [op for op in sample_ops if op["op_type"] in WRITE_OPS]
+        if config.system == "tsom":
+            curves[str(idx)] = read_curve(out / f"memory_sample_{idx}.sqlite", str(idx),
+                                          config.multivalued_attributes)
 
     summary = {
         "run_name": config.run_name,
         "system": config.system,
         "backend": config.backend,
         "model": config.model,
-        "conversations": len(samples),
+        "conversations": len(chosen),
+        "conversation_ids": [i for i, _ in chosen],
         "scores": summarise(rows),
         "cost": cost_summary(rows, write_ops),
+        "contradictions": summarise_curves(curves),
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2))
     (out / "summary.md").write_text(to_markdown(summary))
@@ -80,7 +93,7 @@ def run_sample(config: RunConfig, llm: LLM, idx: int, sample, out: Path):
     memory_cls = RagMemory if config.system == "rag" else MemorySystem
     memory = memory_cls(config, llm, db_path=str(db), sample_id=str(idx))
     agent = Assistant(MemoryTools(memory), llm, config.retrieve_k, config.temperature_c5,
-                      seed=config.seed + idx)
+                      seed=config.seed + idx, use_fact_history=config.use_fact_history)
 
     sessions = sorted(sample.conversation.sessions.items())[: config.max_sessions]
     n_turns = sum(len(s.turns) for _, s in sessions)
@@ -103,6 +116,7 @@ def run_sample(config: RunConfig, llm: LLM, idx: int, sample, out: Path):
             "f1": f1(result["prediction"], gold), "bleu1": bleu1(result["prediction"], gold),
             "prompt_tokens": result["prompt_tokens"],
             "completion_tokens": result["completion_tokens"],
+            "tools": result["tools"], "context": result["context"],  # the trace for this answer
         })
 
     ops = [op.model_dump() for op in memory.store.ops()]
@@ -172,7 +186,19 @@ def to_markdown(summary: dict) -> str:
                       f"{cost['temporal_seconds_per_write']:.2f} | {cost['total_seconds_per_write']:.2f} |",
                       "", f"Fact operations: {ops}. Temporal steps that failed and were skipped: "
                       f"{cost['temporal_failures']}."]
+    if summary.get("contradictions"):
+        lines += ["", contradiction_line(summary["contradictions"])]
     return "\n".join(lines) + "\n"
+
+
+def load_config(path: str, overrides: list) -> RunConfig:
+    """A config file with KEY=VALUE overrides applied."""
+    data = json.loads(Path(path).read_text())
+    for item in overrides:
+        key, value = item.split("=", 1)
+        data[key] = json.loads(value) if (value.replace(".", "", 1).isdigit() or value in ("true", "false", "null")
+                                          or value.startswith("[")) else value
+    return RunConfig(**data)
 
 
 def main():
@@ -184,11 +210,7 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     logging.getLogger("amem_robust").setLevel(logging.WARNING)
 
-    data = json.loads(Path(args.config).read_text())
-    for item in args.set:
-        key, value = item.split("=", 1)
-        data[key] = json.loads(value) if value.replace(".", "", 1).isdigit() or value in ("true", "false", "null") else value
-    run(RunConfig(**data))
+    run(load_config(args.config, args.set))
 
 
 if __name__ == "__main__":

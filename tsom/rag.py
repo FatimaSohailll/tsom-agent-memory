@@ -56,5 +56,8 @@ class RagMemory:
                                    sample_id=self.sample_id, latency_s=time.perf_counter() - start))
         return {"notes": context}
 
+    def fact_history(self, entity: str) -> dict:
+        return {"facts": ""}  # raw turns hold no facts; kept for the shared interface
+
     def sync_all(self):
         self.store.conn.commit()
