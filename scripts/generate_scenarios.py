@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from harness.scenarios import DRAFTS, Scenario, read_jsonl, write_jsonl  # noqa: E402
+from harness.scenarios import DRAFTS, Scenario, read_jsonl, with_past_question, write_jsonl  # noqa: E402
 
 SEED = 42
 COUNTS = {"change": 21, "additive": 7, "restate": 3, "conflict": 3}
@@ -298,7 +298,7 @@ def main():
         llm = LLM(args.backend, args.model)
         llm.check()
         new = paraphrase(new, llm)
-    scenarios = merge(existing, new)
+    scenarios = merge(existing, [with_past_question(s) for s in new])
     write_jsonl(args.out, scenarios)
     print(f"{len(scenarios)} drafts in {args.out} ({len(new)} new) from {len(TEMPLATES)} templates")
 

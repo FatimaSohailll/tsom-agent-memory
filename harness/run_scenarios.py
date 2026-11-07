@@ -25,7 +25,7 @@ from typing import List, Optional
 from agent.assistant import Assistant
 from harness.run_locomo import load_config
 from harness.scenarios import (DEFAULT_SCENARIOS, Scenario, answered, fmt, kn, load_scenarios, save_json,
-                               score_answer)
+                               score_answer, score_past)
 from tsom.contracts import RunConfig
 from tsom.llm import LLM
 from tsom.memory import MemorySystem
@@ -33,7 +33,7 @@ from tsom.rag import RagMemory
 from tsom.tools import MemoryTools
 
 log = logging.getLogger("run_scenarios")
-METRICS = ["correct", "stale", "hedged", "consistent", "retention"]
+METRICS = ["correct", "stale", "hedged", "consistent", "retention", "past_correct", "past_gave_current"]
 
 
 def run_scenario(config: RunConfig, llm: LLM, scenario: Scenario) -> dict:
@@ -50,6 +50,12 @@ def run_scenario(config: RunConfig, llm: LLM, scenario: Scenario) -> dict:
         result = agent.answer(q, 4, scenario.current[0])
         answers.append({"question": q, "prediction": result["prediction"], "context": result["context"],
                         "tools": result["tools"], **score_answer(result["prediction"], scenario)})
+    past = {"past_correct": None, "past_gave_current": None}
+    if scenario.question_past:
+        result = agent.answer(scenario.question_past, 4, scenario.past[0])
+        past = score_past(result["prediction"], scenario)
+        answers.append({"question": scenario.question_past, "prediction": result["prediction"], "past": True,
+                        "context": result["context"], "tools": result["tools"], **past})
     writes = [op for op in memory.store.ops() if op.op_type == "write"]
     facts = final_facts(memory.store, scenario.id)
     memory.store.close()
@@ -59,6 +65,7 @@ def run_scenario(config: RunConfig, llm: LLM, scenario: Scenario) -> dict:
         "answers": answers,
         "correct": main["correct"], "stale": main["stale"], "hedged": main["hedged"],
         "retention": main["retention"], "consistent": answers[0]["verdict"] == answers[1]["verdict"],
+        **past,
         "writes": len(writes), "write_llm_calls": sum(op.llm_calls for op in writes),
         "write_seconds": sum(op.latency_s for op in writes),
         "facts": facts,
@@ -77,7 +84,7 @@ def summarise_scenarios(results: List[dict]) -> dict:
     def block(rs):
         out = {"scenarios": len(rs)}
         for m in METRICS:
-            vals = [r[m] for r in rs if r[m] is not None]
+            vals = [r.get(m) for r in rs if r.get(m) is not None]
             out[m] = kn(sum(vals), len(vals))
         return out
 
@@ -92,17 +99,17 @@ def summarise_scenarios(results: List[dict]) -> dict:
                  "llm_calls_per_write": round(sum(r["write_llm_calls"] for r in results) / writes, 3) if writes else None,
                  "seconds_per_write": round(sum(r["write_seconds"] for r in results) / writes, 3) if writes else None},
         # Per-scenario outcomes, kept small so make_tables can bootstrap from the summary alone.
-        "per_scenario": [{"id": r["id"], "kind": r["kind"], **{m: r[m] for m in METRICS}} for r in results],
+        "per_scenario": [{"id": r["id"], "kind": r["kind"], **{m: r.get(m) for m in METRICS}} for r in results],
     }
 
 
 def to_markdown(summary: dict) -> str:
     lines = [f"## {summary['run_name']}: change scenarios ({summary['system']}, {summary['model']}, "
              f"temperature {summary['temperature']})", "",
-             "| Kind | Scenarios | Correct | Stale | Hedged | Consistent | Retention |",
-             "|---|---|---|---|---|---|---|"]
+             "| Kind | Scenarios | Correct | Stale | Hedged | Consistent | Retention | Past correct | Past gave current |",
+             "|---|---|---|---|---|---|---|---|---|"]
     for name, b in [("overall", summary["overall"])] + list(summary["per_kind"].items()):
-        lines.append(f"| {name} | {b['scenarios']} | " + " | ".join(fmt(b[m]) for m in METRICS) + " |")
+        lines.append(f"| {name} | {b['scenarios']} | " + " | ".join(fmt(b.get(m)) for m in METRICS) + " |")
     c = summary["cost"]
     lines += ["", f"Writes: {c['writes']}, LLM calls per write: {c['llm_calls_per_write']}, "
                   f"seconds per write: {c['seconds_per_write']}"]

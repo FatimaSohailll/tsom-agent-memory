@@ -86,7 +86,9 @@ class TemporalRetriever:
         amem = self.memory.amem
         store = self.memory.store
         sid = self.memory.sample_id or ""
-        query_type, target = classify_query(query)
+        # With time-scoped retrieval off (Gap 3 off), every question is about now.
+        scoped = getattr(self.memory.config, "time_scoped_retrieval", True)
+        query_type, target = classify_query(query) if scoped else ("current", None)
 
         notes_str = amem.find_related_memories_raw(query, k=k)
         ids = list(amem.memories.keys())

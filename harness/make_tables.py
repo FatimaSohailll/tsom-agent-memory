@@ -101,13 +101,15 @@ def scenario_section(runs: Runs) -> List[str]:
     rows, cis, sizes = [], {}, {}
     for system, found in summaries.items():
         row = [system]
-        for metric in ("correct", "stale", "hedged"):
-            text, ci, n = rate_cell([[bool(s[metric]) for s in x["per_scenario"]] for x in found if x])
+        for metric in ("correct", "stale", "hedged", "past_correct"):
+            text, ci, n = rate_cell([[bool(s[metric]) for s in x["per_scenario"] if s.get(metric) is not None]
+                                     for x in found if x])
             row.append(text)
             if metric == "stale":
                 cis[system], sizes[system] = ci, n
         rows.append(row)
-    return lines + table(["System", "Correct", "Stale", "Hedged"], rows) + comparison("Stale", cis, sizes) + [""]
+    return (lines + table(["System", "Correct", "Stale", "Hedged", "Past-period correct"], rows)
+            + comparison("Stale", cis, sizes) + [""])
 
 
 def _rows(folder: Path, tag: str) -> List[dict]:

@@ -182,7 +182,9 @@ def test_run_scenarios_smoke_and_resume(tmp_path):
     assert summary["overall"]["scenarios"] == len(answered())  # conflict scenarios are skipped
     assert summary["cost"]["writes"] > 0 and summary["cost"]["llm_calls_per_write"] > 0
     rows = [json.loads(line) for line in (out / "scenarios_results.jsonl").read_text().splitlines()]
-    assert all(len(r["answers"]) == 2 and "context" in r["answers"][0] for r in rows)
+    # two wordings of the question, plus the past-period question where the scenario has one
+    assert all(len(r["answers"]) == (3 if r["past_correct"] is not None else 2) for r in rows)
+    assert all("context" in r["answers"][0] for r in rows) and any(r["past_correct"] is not None for r in rows)
     assert run_scenarios.run(config) == summary
 
 

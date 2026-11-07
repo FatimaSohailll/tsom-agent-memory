@@ -53,9 +53,16 @@ class Scenario(BaseModel):
     question_alt: str
     current: List[str] = Field(min_length=1)
     old: List[str] = []
+    # A question about a past period and its expected answers (change and cancel only).
+    question_past: Optional[str] = None
+    past: List[str] = []
 
     @model_validator(mode="after")
     def _consistent(self):
+        if bool(self.question_past) != bool(self.past):
+            raise ValueError(f"{self.id}: question_past and past go together")
+        if any(a != a.lower() for a in self.past):
+            raise ValueError(f"{self.id}: past answers must be lowercase")
         for f in self.facts:
             if not 0 <= f.session < len(self.sessions):
                 raise ValueError(f"{self.id}: fact session {f.session} out of range")
@@ -129,6 +136,71 @@ def first_session_values(scenario: Scenario) -> List[str]:
     """Values stated in session 1 that are still expected in the answer (for retention)."""
     current = {normalise(c) for c in scenario.current}
     return [f.value for f in scenario.facts if f.session == 0 and normalise(f.value) in current]
+
+
+# One past-period question per relation; {when} is the month and year of the first value's session.
+PAST_TEMPLATES = {
+    "lives_in": "Where did {name} live in {when}?",
+    "works_at": "Where did {name} work in {when}?",
+    "job_title": "What was {name}'s job in {when}?",
+    "studies_at": "Where did {name} study in {when}?",
+    "relationship_status": "What was {name}'s relationship status in {when}?",
+    "partner": "Who was {name}'s partner in {when}?",
+    "likes": "What drink did {name} like in {when}?",
+    "hobby": "What sport did {name} play in {when}?",
+    "has_booking": "What did {name} have booked in {when}?",
+}
+_DATE = re.compile(r"(\d{1,2})\s+([A-Za-z]+),?\s+(\d{4})")
+_MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september",
+           "october", "november", "december"]
+
+
+def _month(date_text: str) -> Optional[tuple]:
+    m = _DATE.search(date_text)
+    if not m or m.group(2).lower() not in _MONTHS:
+        return None
+    return int(m.group(3)), _MONTHS.index(m.group(2).lower()) + 1
+
+
+def past_question(scenario: Scenario) -> Optional[tuple]:
+    """(question, expected answers) about the first value, or None (not a change or cancel scenario,
+    or a relation with no sensible past wording).
+
+    When the two values were stated at least two months apart, it names the month the first value was
+    stated ("Where did Ali live in May 2023?"); one month apart could overlap the change ("I moved last
+    month"), so then it asks "... before?" instead, which has no date to filter by."""
+    if scenario.kind not in HAS_OLD:
+        return None
+    later = next((f for f in scenario.facts if f.replaces), None)
+    first = next((f for f in scenario.facts if later and f.value == later.replaces), None)
+    template = PAST_TEMPLATES.get(first.predicate) if first else None
+    if template is None:
+        return None
+    expected = list(scenario.old if scenario.kind == "change" else [first.value.lower()])
+    start, end = _month(scenario.sessions[first.session].date), _month(scenario.sessions[later.session].date)
+    if not start or not end or (end[0] * 12 + end[1]) - (start[0] * 12 + start[1]) < 2:
+        return template.replace(" in {when}?", " before?").format(name=first.speaker), expected
+    when = f"{_MONTHS[start[1] - 1].capitalize()} {start[0]}"
+    return template.format(name=first.speaker, when=when), expected
+
+
+def with_past_question(scenario: Scenario) -> Scenario:
+    """The scenario with a past-period question added, if it has none and one applies."""
+    if scenario.question_past:
+        return scenario
+    found = past_question(scenario)
+    if not found:
+        return scenario
+    return scenario.model_copy(update={"question_past": found[0], "past": found[1]})
+
+
+def score_past(answer: str, scenario: Scenario) -> dict:
+    """past_correct: the answer gives the value that held then. past_gave_current: it gives
+    the present value instead, which is what a memory without time scoping tends to do."""
+    a = normalise(answer)
+    correct = any(_has(a, p) for p in scenario.past)
+    return {"past_correct": correct,
+            "past_gave_current": not correct and any(_has(a, c) for c in scenario.current)}
 
 
 def score_answer(answer: str, scenario: Scenario) -> dict:

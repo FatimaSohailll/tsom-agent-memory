@@ -94,8 +94,12 @@ class RunConfig(BaseModel):
     # tsom only: "rules_llm" = deterministic rules first, LLM for what they leave open;
     # "llm_only" = the LLM decides every differing value (only an empty key -> ADD and
     # an identical value -> REAFFIRM are settled without it);
-    # "newest_wins" = no classifier: every differing value replaces what is stored, no LLM call.
-    classifier_mode: Literal["rules_llm", "llm_only", "newest_wins"] = "rules_llm"
+    # "newest_wins" = no classifier: every differing value replaces what is stored, no LLM call;
+    # "append_only" = no classifier: every differing value is added beside what is stored (Gap 1 off).
+    classifier_mode: Literal["rules_llm", "llm_only", "newest_wins", "append_only"] = "rules_llm"
+    # tsom only: False turns the time-scoped retriever off (Gap 3 off): every question is treated as
+    # asking about now, so only active facts are shown, with no past-period check or date filtering.
+    time_scoped_retrieval: bool = True
     temperature_c5: float = 0.5  # A-Mem's default for adversarial questions
     # If set, every LLM call uses this, including A-Mem's. None keeps each call's own value.
     temperature: Optional[float] = None
