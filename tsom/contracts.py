@@ -105,6 +105,8 @@ class RunConfig(BaseModel):
     use_fact_history: bool = False
     dataset: str = "data/locomo10.json"
     max_samples: Optional[int] = None  # None = all 10 conversations
+    # LoCoMo only: the conversations to run, by index (0-9). None = the first max_samples.
+    conversations: Optional[List[int]] = None
     max_sessions: Optional[int] = None  # None = every session
     max_questions: Optional[int] = None  # per conversation; None = all
     output_dir: str = "results"

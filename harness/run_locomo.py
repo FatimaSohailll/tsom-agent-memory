@@ -44,10 +44,17 @@ def run(config: RunConfig) -> dict:
     dataset = Path(config.dataset)
     if not dataset.is_absolute() and not dataset.exists():
         dataset = REPO_ROOT / dataset  # relative paths in configs are from the repo root
-    samples = load_locomo_dataset(str(dataset))[: config.max_samples]
+    everything = load_locomo_dataset(str(dataset))
+    if config.conversations is not None:
+        unknown = [i for i in config.conversations if not 0 <= i < len(everything)]
+        if unknown:
+            raise ValueError(f"no LoCoMo conversation {unknown}; there are {len(everything)} (0-{len(everything) - 1})")
+        chosen = [(i, everything[i]) for i in config.conversations]
+    else:
+        chosen = list(enumerate(everything[: config.max_samples]))
 
     rows, write_ops, curves = [], [], {}
-    for idx, sample in enumerate(samples):
+    for idx, sample in chosen:
         pred_file = out / f"sample_{idx}.jsonl"
         ops_file = out / f"ops_sample_{idx}.jsonl"
         if pred_file.exists() and ops_file.exists():
@@ -68,7 +75,8 @@ def run(config: RunConfig) -> dict:
         "system": config.system,
         "backend": config.backend,
         "model": config.model,
-        "conversations": len(samples),
+        "conversations": len(chosen),
+        "conversation_ids": [i for i, _ in chosen],
         "scores": summarise(rows),
         "cost": cost_summary(rows, write_ops),
         "contradictions": summarise_curves(curves),
@@ -188,7 +196,8 @@ def load_config(path: str, overrides: list) -> RunConfig:
     data = json.loads(Path(path).read_text())
     for item in overrides:
         key, value = item.split("=", 1)
-        data[key] = json.loads(value) if value.replace(".", "", 1).isdigit() or value in ("true", "false", "null") else value
+        data[key] = json.loads(value) if (value.replace(".", "", 1).isdigit() or value in ("true", "false", "null")
+                                          or value.startswith("[")) else value
     return RunConfig(**data)
 
 
