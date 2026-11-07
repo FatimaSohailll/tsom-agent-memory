@@ -185,10 +185,9 @@ def main():
     parser.add_argument("--model", help="override the config's model")
     parser.add_argument("--rules", choices=["on", "off"], default="on",
                         help="on: seed_multivalued and additive_cue enabled (default); off: both disabled")
-    parser.add_argument("--classifier", choices=["rules_llm", "llm_only", "newest_wins"], default="rules_llm",
+    parser.add_argument("--classifier", choices=["rules_llm", "llm_only"], default="rules_llm",
                         help="rules_llm: deterministic rules first, LLM for the rest (default); "
-                             "llm_only: the LLM decides every differing value (--rules has no effect); "
-                             "newest_wins: no classifier, every differing value replaces (--rules has no effect)")
+                             "llm_only: the LLM decides every differing value (--rules has no effect)")
     parser.add_argument("--raw", action="store_true",
                         help="print the raw extractor and classifier responses")
     parser.add_argument("--verbose", action="store_true", help="show library log messages")

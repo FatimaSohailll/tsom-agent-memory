@@ -69,7 +69,7 @@ FactConsolidation (MemoryAgentBench, `Conflict_Resolution` split) is loaded from
 
 - `rules_llm` (default): deterministic rules decide first (no existing fact, same value, earlier `valid_from`, past tense before the existing fact, several values already stored, and the optional `seed_multivalued` and `additive_cue` rules). The LLM is asked only for what the rules leave open.
 - `llm_only`: the LLM decides every differing value, including `ADD_HISTORICAL`. An empty key (`ADD`) and an identical value (`REAFFIRM`) still need no call. Unparseable output is retried once, then falls back to the rule-based path. `configs/tsom_llmonly_qwen2.5-3b.json` is ready to use.
-- `newest_wins`: the classifier is removed. Every differing value replaces what is stored, with no LLM call, so nothing is ever added alongside, corrected or kept as history by the classifier. The consolidator's check still applies: a value with a stated start before the stored fact began is kept as history. `configs/tsom_newest_qwen2.5-3b.json` is ready to use.
+- `append_only`: the classifier is removed (Gap 1 off). Every differing value is added beside what is stored, with no LLM call, so nothing is ever replaced or retired. `configs/tsom_gap3only_qwen2.5-3b.json` uses it.
 
 In both modes, if the LLM's reply still cannot be read, the operation is `UNRESOLVED`: the current fact stays as it is, the new value is logged but not stored as a fact, and the run summary counts it under fact operations.
 
