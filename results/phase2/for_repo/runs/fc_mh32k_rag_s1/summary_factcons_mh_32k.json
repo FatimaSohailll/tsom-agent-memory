@@ -1,0 +1,44 @@
+{
+  "run_name": "fc_mh32k_rag_s1",
+  "system": "rag",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "variant": "mh",
+  "size": "32k",
+  "chunk_facts": 20,
+  "retrieve_k": 10,
+  "samples": 1,
+  "questions": 100,
+  "accuracy": 0.02,
+  "f1": 0.03333333333333333,
+  "stale": {
+    "changed_questions": 82,
+    "stale_answers": 23,
+    "stale_rate": 0.2804878048780488
+  },
+  "per_sample": {
+    "mh_32k": {
+      "n": 100,
+      "accuracy": 0.02,
+      "f1": 0.03333333333333333,
+      "changed_questions": 82,
+      "stale_answers": 23,
+      "stale_rate": 0.2804878048780488
+    }
+  },
+  "cost": {
+    "writes": 116,
+    "llm_calls_per_write": 0,
+    "seconds_per_write": 0.009256878137962147,
+    "evolution_rate": 0.0,
+    "answer_prompt_tokens_per_question": 3515.66,
+    "ingest_llm_calls": 0,
+    "ingest_prompt_tokens": 0,
+    "ingest_completion_tokens": 0,
+    "answer_llm_calls": 100,
+    "answer_prompt_tokens": 351566,
+    "answer_completion_tokens": 577
+  },
+  "tsom": null,
+  "contradictions": null
+}

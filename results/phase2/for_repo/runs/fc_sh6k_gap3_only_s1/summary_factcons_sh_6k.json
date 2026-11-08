@@ -1,0 +1,299 @@
+{
+  "run_name": "fc_sh6k_gap3_only_s1",
+  "system": "tsom",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "variant": "sh",
+  "size": "6k",
+  "chunk_facts": 20,
+  "retrieve_k": 10,
+  "samples": 1,
+  "questions": 100,
+  "accuracy": 0.51,
+  "f1": 0.5094545454545455,
+  "stale": {
+    "changed_questions": 74,
+    "stale_answers": 47,
+    "stale_rate": 0.6351351351351351
+  },
+  "per_sample": {
+    "sh_6k": {
+      "n": 100,
+      "accuracy": 0.51,
+      "f1": 0.5094545454545455,
+      "changed_questions": 74,
+      "stale_answers": 47,
+      "stale_rate": 0.6351351351351351
+    }
+  },
+  "cost": {
+    "writes": 23,
+    "llm_calls_per_write": 2.9130434782608696,
+    "seconds_per_write": 11.844281612391292,
+    "evolution_rate": 0.9565217391304348,
+    "answer_prompt_tokens_per_question": 7188.44,
+    "temporal_writes": 23,
+    "temporal_llm_calls_per_write": 2.0,
+    "temporal_seconds_per_write": 12.142046876826024,
+    "total_llm_calls_per_write": 4.913043478260869,
+    "total_seconds_per_write": 23.986328489217318,
+    "temporal_failures": 0,
+    "fact_ops": {
+      "ADD": 443,
+      "REAFFIRM": 1
+    },
+    "ingest_llm_calls": 113,
+    "ingest_prompt_tokens": 246718,
+    "ingest_completion_tokens": 32490,
+    "answer_llm_calls": 100,
+    "answer_prompt_tokens": 718844,
+    "answer_completion_tokens": 401
+  },
+  "tsom": {
+    "fact_ops": {
+      "ADD": 443,
+      "REAFFIRM": 1
+    },
+    "failures": 0
+  },
+  "contradictions": {
+    "checkpoints": 23,
+    "checkpoints_lower": 0,
+    "final_rate": 24.604966139954854,
+    "final_rate_without_consolidation": 24.604966139954854,
+    "per_sample": {
+      "sh_6k": [
+        {
+          "session": "facts 0-19",
+          "step": 19,
+          "facts": 20,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 20,
+          "without_consolidation": 0,
+          "rate_without_consolidation": 0.0
+        },
+        {
+          "session": "facts 20-39",
+          "step": 39,
+          "facts": 40,
+          "contradictions": 1,
+          "rate": 2.5,
+          "all_facts": 40,
+          "without_consolidation": 1,
+          "rate_without_consolidation": 2.5
+        },
+        {
+          "session": "facts 40-59",
+          "step": 59,
+          "facts": 60,
+          "contradictions": 4,
+          "rate": 6.666666666666667,
+          "all_facts": 60,
+          "without_consolidation": 4,
+          "rate_without_consolidation": 6.666666666666667
+        },
+        {
+          "session": "facts 60-79",
+          "step": 79,
+          "facts": 80,
+          "contradictions": 5,
+          "rate": 6.25,
+          "all_facts": 80,
+          "without_consolidation": 5,
+          "rate_without_consolidation": 6.25
+        },
+        {
+          "session": "facts 80-99",
+          "step": 99,
+          "facts": 100,
+          "contradictions": 5,
+          "rate": 5.0,
+          "all_facts": 100,
+          "without_consolidation": 5,
+          "rate_without_consolidation": 5.0
+        },
+        {
+          "session": "facts 100-119",
+          "step": 119,
+          "facts": 120,
+          "contradictions": 5,
+          "rate": 4.166666666666667,
+          "all_facts": 120,
+          "without_consolidation": 5,
+          "rate_without_consolidation": 4.166666666666667
+        },
+        {
+          "session": "facts 120-139",
+          "step": 139,
+          "facts": 140,
+          "contradictions": 9,
+          "rate": 6.428571428571429,
+          "all_facts": 140,
+          "without_consolidation": 9,
+          "rate_without_consolidation": 6.428571428571429
+        },
+        {
+          "session": "facts 140-159",
+          "step": 159,
+          "facts": 160,
+          "contradictions": 12,
+          "rate": 7.5,
+          "all_facts": 160,
+          "without_consolidation": 12,
+          "rate_without_consolidation": 7.5
+        },
+        {
+          "session": "facts 160-179",
+          "step": 179,
+          "facts": 180,
+          "contradictions": 14,
+          "rate": 7.777777777777778,
+          "all_facts": 180,
+          "without_consolidation": 14,
+          "rate_without_consolidation": 7.777777777777778
+        },
+        {
+          "session": "facts 180-199",
+          "step": 199,
+          "facts": 200,
+          "contradictions": 17,
+          "rate": 8.5,
+          "all_facts": 200,
+          "without_consolidation": 17,
+          "rate_without_consolidation": 8.5
+        },
+        {
+          "session": "facts 200-219",
+          "step": 219,
+          "facts": 211,
+          "contradictions": 19,
+          "rate": 9.004739336492891,
+          "all_facts": 211,
+          "without_consolidation": 19,
+          "rate_without_consolidation": 9.004739336492891
+        },
+        {
+          "session": "facts 220-239",
+          "step": 239,
+          "facts": 230,
+          "contradictions": 26,
+          "rate": 11.304347826086957,
+          "all_facts": 230,
+          "without_consolidation": 26,
+          "rate_without_consolidation": 11.304347826086957
+        },
+        {
+          "session": "facts 240-259",
+          "step": 259,
+          "facts": 250,
+          "contradictions": 29,
+          "rate": 11.6,
+          "all_facts": 250,
+          "without_consolidation": 29,
+          "rate_without_consolidation": 11.6
+        },
+        {
+          "session": "facts 260-279",
+          "step": 279,
+          "facts": 270,
+          "contradictions": 35,
+          "rate": 12.962962962962964,
+          "all_facts": 270,
+          "without_consolidation": 35,
+          "rate_without_consolidation": 12.962962962962964
+        },
+        {
+          "session": "facts 280-299",
+          "step": 299,
+          "facts": 290,
+          "contradictions": 41,
+          "rate": 14.137931034482758,
+          "all_facts": 290,
+          "without_consolidation": 41,
+          "rate_without_consolidation": 14.137931034482758
+        },
+        {
+          "session": "facts 300-319",
+          "step": 319,
+          "facts": 310,
+          "contradictions": 47,
+          "rate": 15.161290322580646,
+          "all_facts": 310,
+          "without_consolidation": 47,
+          "rate_without_consolidation": 15.161290322580646
+        },
+        {
+          "session": "facts 320-339",
+          "step": 339,
+          "facts": 329,
+          "contradictions": 57,
+          "rate": 17.325227963525837,
+          "all_facts": 329,
+          "without_consolidation": 57,
+          "rate_without_consolidation": 17.325227963525837
+        },
+        {
+          "session": "facts 340-359",
+          "step": 359,
+          "facts": 349,
+          "contradictions": 63,
+          "rate": 18.05157593123209,
+          "all_facts": 349,
+          "without_consolidation": 63,
+          "rate_without_consolidation": 18.05157593123209
+        },
+        {
+          "session": "facts 360-379",
+          "step": 379,
+          "facts": 369,
+          "contradictions": 73,
+          "rate": 19.78319783197832,
+          "all_facts": 369,
+          "without_consolidation": 73,
+          "rate_without_consolidation": 19.78319783197832
+        },
+        {
+          "session": "facts 380-399",
+          "step": 399,
+          "facts": 389,
+          "contradictions": 83,
+          "rate": 21.336760925449873,
+          "all_facts": 389,
+          "without_consolidation": 83,
+          "rate_without_consolidation": 21.336760925449873
+        },
+        {
+          "session": "facts 400-419",
+          "step": 419,
+          "facts": 409,
+          "contradictions": 93,
+          "rate": 22.73838630806846,
+          "all_facts": 409,
+          "without_consolidation": 93,
+          "rate_without_consolidation": 22.73838630806846
+        },
+        {
+          "session": "facts 420-439",
+          "step": 439,
+          "facts": 429,
+          "contradictions": 102,
+          "rate": 23.776223776223777,
+          "all_facts": 429,
+          "without_consolidation": 102,
+          "rate_without_consolidation": 23.776223776223777
+        },
+        {
+          "session": "facts 440-454",
+          "step": 453,
+          "facts": 443,
+          "contradictions": 109,
+          "rate": 24.604966139954854,
+          "all_facts": 443,
+          "without_consolidation": 109,
+          "rate_without_consolidation": 24.604966139954854
+        }
+      ]
+    }
+  }
+}

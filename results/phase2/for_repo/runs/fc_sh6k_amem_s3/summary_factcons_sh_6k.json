@@ -1,0 +1,44 @@
+{
+  "run_name": "fc_sh6k_amem_s3",
+  "system": "amem",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "variant": "sh",
+  "size": "6k",
+  "chunk_facts": 20,
+  "retrieve_k": 10,
+  "samples": 1,
+  "questions": 100,
+  "accuracy": 0.4,
+  "f1": 0.3917777777777778,
+  "stale": {
+    "changed_questions": 74,
+    "stale_answers": 50,
+    "stale_rate": 0.6756756756756757
+  },
+  "per_sample": {
+    "sh_6k": {
+      "n": 100,
+      "accuracy": 0.4,
+      "f1": 0.3917777777777778,
+      "changed_questions": 74,
+      "stale_answers": 50,
+      "stale_rate": 0.6756756756756757
+    }
+  },
+  "cost": {
+    "writes": 23,
+    "llm_calls_per_write": 2.9130434782608696,
+    "seconds_per_write": 10.131441719217433,
+    "evolution_rate": 0.9565217391304348,
+    "answer_prompt_tokens_per_question": 5774.97,
+    "ingest_llm_calls": 67,
+    "ingest_prompt_tokens": 142561,
+    "ingest_completion_tokens": 11759,
+    "answer_llm_calls": 100,
+    "answer_prompt_tokens": 577497,
+    "answer_completion_tokens": 408
+  },
+  "tsom": null,
+  "contradictions": null
+}

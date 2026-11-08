@@ -1,0 +1,51 @@
+{
+  "run_name": "locomo_rag_s1",
+  "system": "rag",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "conversations": 2,
+  "conversation_ids": [
+    1,
+    8
+  ],
+  "scores": {
+    "Multi-hop": {
+      "n": 48,
+      "f1": 16.644689389104933,
+      "bleu1": 12.184149841345576
+    },
+    "Temporal": {
+      "n": 59,
+      "f1": 30.467141145107245,
+      "bleu1": 24.816925679496595
+    },
+    "Open-domain": {
+      "n": 13,
+      "f1": 18.189929293494657,
+      "bleu1": 17.756102942225034
+    },
+    "Single-hop": {
+      "n": 117,
+      "f1": 22.38885050714749,
+      "bleu1": 18.22327618422166
+    },
+    "Adversarial": {
+      "n": 64,
+      "f1": 36.465999278499275,
+      "bleu1": 34.07713510978288
+    },
+    "Overall": {
+      "n": 301,
+      "f1": 25.868089575461813,
+      "bleu1": 21.903412313301832
+    }
+  },
+  "cost": {
+    "writes": 878,
+    "llm_calls_per_write": 0,
+    "seconds_per_write": 0.006720797255130287,
+    "evolution_rate": 0.0,
+    "answer_prompt_tokens_per_question": 703.109634551495
+  },
+  "contradictions": null
+}
