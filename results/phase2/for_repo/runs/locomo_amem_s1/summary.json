@@ -1,0 +1,51 @@
+{
+  "run_name": "locomo_amem_s1",
+  "system": "amem",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "conversations": 2,
+  "conversation_ids": [
+    1,
+    8
+  ],
+  "scores": {
+    "Multi-hop": {
+      "n": 48,
+      "f1": 17.66961456492587,
+      "bleu1": 10.191995633280643
+    },
+    "Temporal": {
+      "n": 59,
+      "f1": 31.399099958421996,
+      "bleu1": 22.82185647288696
+    },
+    "Open-domain": {
+      "n": 13,
+      "f1": 25.20895770895771,
+      "bleu1": 22.242539439481476
+    },
+    "Single-hop": {
+      "n": 117,
+      "f1": 25.274424842562183,
+      "bleu1": 20.76843716037852
+    },
+    "Adversarial": {
+      "n": 64,
+      "f1": 41.30469357031857,
+      "bleu1": 37.55754409450157
+    },
+    "Overall": {
+      "n": 301,
+      "f1": 28.66781708292343,
+      "bleu1": 23.117768454562952
+    }
+  },
+  "cost": {
+    "writes": 878,
+    "llm_calls_per_write": 2.7608200455580865,
+    "seconds_per_write": 3.7705950103655907,
+    "evolution_rate": 0.7562642369020501,
+    "answer_prompt_tokens_per_question": 1176.142857142857
+  },
+  "contradictions": null
+}

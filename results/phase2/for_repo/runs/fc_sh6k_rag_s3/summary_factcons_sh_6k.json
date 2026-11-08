@@ -1,0 +1,44 @@
+{
+  "run_name": "fc_sh6k_rag_s3",
+  "system": "rag",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "variant": "sh",
+  "size": "6k",
+  "chunk_facts": 20,
+  "retrieve_k": 10,
+  "samples": 1,
+  "questions": 100,
+  "accuracy": 0.38,
+  "f1": 0.35365079365079366,
+  "stale": {
+    "changed_questions": 74,
+    "stale_answers": 49,
+    "stale_rate": 0.6621621621621622
+  },
+  "per_sample": {
+    "sh_6k": {
+      "n": 100,
+      "accuracy": 0.38,
+      "f1": 0.35365079365079366,
+      "changed_questions": 74,
+      "stale_answers": 49,
+      "stale_rate": 0.6621621621621622
+    }
+  },
+  "cost": {
+    "writes": 23,
+    "llm_calls_per_write": 0,
+    "seconds_per_write": 0.0632870868260437,
+    "evolution_rate": 0.0,
+    "answer_prompt_tokens_per_question": 3254.64,
+    "ingest_llm_calls": 0,
+    "ingest_prompt_tokens": 0,
+    "ingest_completion_tokens": 0,
+    "answer_llm_calls": 100,
+    "answer_prompt_tokens": 325464,
+    "answer_completion_tokens": 474
+  },
+  "tsom": null,
+  "contradictions": null
+}

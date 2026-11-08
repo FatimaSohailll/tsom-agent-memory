@@ -1,0 +1,32 @@
+{
+  "run_name": "fc_sh6k_gap3_only_s1",
+  "system": "tsom",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "base_url": null,
+  "embedder": "all-MiniLM-L6-v2",
+  "retrieve_k": 10,
+  "seed_multivalued": false,
+  "additive_cue": false,
+  "multivalued_attributes": [
+    "speaks",
+    "languages",
+    "children",
+    "siblings",
+    "hobbies",
+    "member_of"
+  ],
+  "classifier_mode": "append_only",
+  "time_scoped_retrieval": true,
+  "temperature_c5": 0.5,
+  "temperature": 0.0,
+  "seed": 1,
+  "send_seed": true,
+  "use_fact_history": false,
+  "dataset": "data/locomo10.json",
+  "max_samples": 1,
+  "conversations": null,
+  "max_sessions": null,
+  "max_questions": null,
+  "output_dir": "/kaggle/working/phase2/runs"
+}

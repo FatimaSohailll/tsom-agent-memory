@@ -1,0 +1,1306 @@
+{
+  "run_name": "scen_gap3_only_s1",
+  "system": "tsom",
+  "model": "qwen2.5:3b",
+  "backend": "ollama",
+  "temperature": 0.0,
+  "overall": {
+    "scenarios": 100,
+    "correct": {
+      "k": 78,
+      "n": 100,
+      "pct": 78.0
+    },
+    "stale": {
+      "k": 4,
+      "n": 100,
+      "pct": 4.0
+    },
+    "hedged": {
+      "k": 0,
+      "n": 100,
+      "pct": 0.0
+    },
+    "consistent": {
+      "k": 80,
+      "n": 100,
+      "pct": 80.0
+    },
+    "retention": {
+      "k": 44,
+      "n": 50,
+      "pct": 88.0
+    },
+    "past_correct": {
+      "k": 46,
+      "n": 48,
+      "pct": 95.8
+    },
+    "past_gave_current": {
+      "k": 0,
+      "n": 48,
+      "pct": 0.0
+    }
+  },
+  "per_kind": {
+    "additive": {
+      "scenarios": 25,
+      "correct": {
+        "k": 17,
+        "n": 25,
+        "pct": 68.0
+      },
+      "stale": {
+        "k": 0,
+        "n": 25,
+        "pct": 0.0
+      },
+      "hedged": {
+        "k": 0,
+        "n": 25,
+        "pct": 0.0
+      },
+      "consistent": {
+        "k": 19,
+        "n": 25,
+        "pct": 76.0
+      },
+      "retention": {
+        "k": 22,
+        "n": 25,
+        "pct": 88.0
+      },
+      "past_correct": {
+        "k": 0,
+        "n": 0,
+        "pct": null
+      },
+      "past_gave_current": {
+        "k": 0,
+        "n": 0,
+        "pct": null
+      }
+    },
+    "cancel": {
+      "scenarios": 25,
+      "correct": {
+        "k": 18,
+        "n": 25,
+        "pct": 72.0
+      },
+      "stale": {
+        "k": 0,
+        "n": 25,
+        "pct": 0.0
+      },
+      "hedged": {
+        "k": 0,
+        "n": 25,
+        "pct": 0.0
+      },
+      "consistent": {
+        "k": 16,
+        "n": 25,
+        "pct": 64.0
+      },
+      "retention": {
+        "k": 0,
+        "n": 0,
+        "pct": null
+      },
+      "past_correct": {
+        "k": 23,
+        "n": 25,
+        "pct": 92.0
+      },
+      "past_gave_current": {
+        "k": 0,
+        "n": 25,
+        "pct": 0.0
+      }
+    },
+    "change": {
+      "scenarios": 25,
+      "correct": {
+        "k": 21,
+        "n": 25,
+        "pct": 84.0
+      },
+      "stale": {
+        "k": 4,
+        "n": 25,
+        "pct": 16.0
+      },
+      "hedged": {
+        "k": 0,
+        "n": 25,
+        "pct": 0.0
+      },
+      "consistent": {
+        "k": 22,
+        "n": 25,
+        "pct": 88.0
+      },
+      "retention": {
+        "k": 0,
+        "n": 0,
+        "pct": null
+      },
+      "past_correct": {
+        "k": 23,
+        "n": 23,
+        "pct": 100.0
+      },
+      "past_gave_current": {
+        "k": 0,
+        "n": 23,
+        "pct": 0.0
+      }
+    },
+    "restate": {
+      "scenarios": 25,
+      "correct": {
+        "k": 22,
+        "n": 25,
+        "pct": 88.0
+      },
+      "stale": {
+        "k": 0,
+        "n": 25,
+        "pct": 0.0
+      },
+      "hedged": {
+        "k": 0,
+        "n": 25,
+        "pct": 0.0
+      },
+      "consistent": {
+        "k": 23,
+        "n": 25,
+        "pct": 92.0
+      },
+      "retention": {
+        "k": 22,
+        "n": 25,
+        "pct": 88.0
+      },
+      "past_correct": {
+        "k": 0,
+        "n": 0,
+        "pct": null
+      },
+      "past_gave_current": {
+        "k": 0,
+        "n": 0,
+        "pct": null
+      }
+    }
+  },
+  "cost": {
+    "writes": 790,
+    "llm_calls_per_write": 1.951,
+    "seconds_per_write": 1.776
+  },
+  "per_scenario": [
+    {
+      "id": "hand-01",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "hand-02",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "hand-03",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "hand-04",
+      "kind": "additive",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "hand-05",
+      "kind": "restate",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": false,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-change-01",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-02",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-03",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-04",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-05",
+      "kind": "change",
+      "correct": false,
+      "stale": true,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-06",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-07",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-change-08",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-09",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-10",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-11",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-12",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-13",
+      "kind": "change",
+      "correct": false,
+      "stale": true,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-14",
+      "kind": "change",
+      "correct": false,
+      "stale": true,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-15",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-16",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-change-17",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-18",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-19",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-20",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-change-21",
+      "kind": "change",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-additive-01",
+      "kind": "additive",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-02",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-03",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-04",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-05",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-06",
+      "kind": "additive",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-07",
+      "kind": "additive",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": false,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-01",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-02",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-03",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-change-22",
+      "kind": "change",
+      "correct": false,
+      "stale": true,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-01",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-02",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-03",
+      "kind": "cancel",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-04",
+      "kind": "cancel",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-05",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-06",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-07",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-08",
+      "kind": "cancel",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-09",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-10",
+      "kind": "cancel",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-11",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-12",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-13",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-14",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-15",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": false,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-16",
+      "kind": "cancel",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-17",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-18",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-19",
+      "kind": "cancel",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-20",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-21",
+      "kind": "cancel",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-22",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": false,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-23",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-24",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-cancel-25",
+      "kind": "cancel",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": null,
+      "past_correct": true,
+      "past_gave_current": false
+    },
+    {
+      "id": "gen-additive-08",
+      "kind": "additive",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": false,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-09",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-10",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-11",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-12",
+      "kind": "additive",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-13",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-14",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-15",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-16",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-17",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-18",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-19",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-20",
+      "kind": "additive",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-21",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-22",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-23",
+      "kind": "additive",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-additive-24",
+      "kind": "additive",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": false,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-04",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-05",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-06",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-07",
+      "kind": "restate",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": false,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-08",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-09",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-10",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-11",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-12",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-13",
+      "kind": "restate",
+      "correct": false,
+      "stale": false,
+      "hedged": false,
+      "consistent": false,
+      "retention": false,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-14",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-15",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-16",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-17",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-18",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-19",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-20",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-21",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-22",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-23",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    },
+    {
+      "id": "gen-restate-24",
+      "kind": "restate",
+      "correct": true,
+      "stale": false,
+      "hedged": false,
+      "consistent": true,
+      "retention": true,
+      "past_correct": null,
+      "past_gave_current": null
+    }
+  ]
+}

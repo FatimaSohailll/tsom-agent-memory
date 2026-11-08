@@ -1,0 +1,654 @@
+{
+  "run_name": "extraction",
+  "model": "qwen2.5:3b",
+  "reviewed_only": true,
+  "overall": {
+    "recall": {
+      "k": 91,
+      "n": 200,
+      "pct": 45.5
+    },
+    "wrong_entity": 12,
+    "missed": 97
+  },
+  "per_kind": {
+    "additive": {
+      "recall": {
+        "k": 24,
+        "n": 50,
+        "pct": 48.0
+      },
+      "wrong_entity": 2,
+      "missed": 24
+    },
+    "cancel": {
+      "recall": {
+        "k": 13,
+        "n": 50,
+        "pct": 26.0
+      },
+      "wrong_entity": 2,
+      "missed": 35
+    },
+    "change": {
+      "recall": {
+        "k": 28,
+        "n": 50,
+        "pct": 56.0
+      },
+      "wrong_entity": 5,
+      "missed": 17
+    },
+    "restate": {
+      "recall": {
+        "k": 26,
+        "n": 50,
+        "pct": 52.0
+      },
+      "wrong_entity": 3,
+      "missed": 21
+    }
+  },
+  "per_fact": [
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": true
+    },
+    {
+      "found": true
+    },
+    {
+      "found": false
+    },
+    {
+      "found": false
+    }
+  ]
+}

@@ -1,0 +1,301 @@
+{
+  "run_name": "fc_mh6k_tsom_s1",
+  "system": "tsom",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "variant": "mh",
+  "size": "6k",
+  "chunk_facts": 20,
+  "retrieve_k": 10,
+  "samples": 1,
+  "questions": 100,
+  "accuracy": 0.15,
+  "f1": 0.16238095238095238,
+  "stale": {
+    "changed_questions": 80,
+    "stale_answers": 10,
+    "stale_rate": 0.125
+  },
+  "per_sample": {
+    "mh_6k": {
+      "n": 100,
+      "accuracy": 0.15,
+      "f1": 0.16238095238095238,
+      "changed_questions": 80,
+      "stale_answers": 10,
+      "stale_rate": 0.125
+    }
+  },
+  "cost": {
+    "writes": 23,
+    "llm_calls_per_write": 2.9130434782608696,
+    "seconds_per_write": 11.844019687652205,
+    "evolution_rate": 0.9565217391304348,
+    "answer_prompt_tokens_per_question": 7198.41,
+    "temporal_writes": 23,
+    "temporal_llm_calls_per_write": 6.782608695652174,
+    "temporal_seconds_per_write": 14.665216959086878,
+    "total_llm_calls_per_write": 9.695652173913043,
+    "total_seconds_per_write": 26.509236646739083,
+    "temporal_failures": 0,
+    "fact_ops": {
+      "ADD": 333,
+      "REPLACE": 110,
+      "REAFFIRM": 1
+    },
+    "ingest_llm_calls": 223,
+    "ingest_prompt_tokens": 277729,
+    "ingest_completion_tokens": 35821,
+    "answer_llm_calls": 100,
+    "answer_prompt_tokens": 719841,
+    "answer_completion_tokens": 388
+  },
+  "tsom": {
+    "fact_ops": {
+      "ADD": 333,
+      "REPLACE": 110,
+      "REAFFIRM": 1
+    },
+    "failures": 0
+  },
+  "contradictions": {
+    "checkpoints": 23,
+    "checkpoints_lower": 22,
+    "final_rate": 0.0,
+    "final_rate_without_consolidation": 24.604966139954854,
+    "per_sample": {
+      "mh_6k": [
+        {
+          "session": "facts 0-19",
+          "step": 19,
+          "facts": 20,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 20,
+          "without_consolidation": 0,
+          "rate_without_consolidation": 0.0
+        },
+        {
+          "session": "facts 20-39",
+          "step": 39,
+          "facts": 39,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 40,
+          "without_consolidation": 1,
+          "rate_without_consolidation": 2.5
+        },
+        {
+          "session": "facts 40-59",
+          "step": 59,
+          "facts": 56,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 60,
+          "without_consolidation": 4,
+          "rate_without_consolidation": 6.666666666666667
+        },
+        {
+          "session": "facts 60-79",
+          "step": 79,
+          "facts": 75,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 80,
+          "without_consolidation": 5,
+          "rate_without_consolidation": 6.25
+        },
+        {
+          "session": "facts 80-99",
+          "step": 99,
+          "facts": 95,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 100,
+          "without_consolidation": 5,
+          "rate_without_consolidation": 5.0
+        },
+        {
+          "session": "facts 100-119",
+          "step": 119,
+          "facts": 115,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 120,
+          "without_consolidation": 5,
+          "rate_without_consolidation": 4.166666666666667
+        },
+        {
+          "session": "facts 120-139",
+          "step": 139,
+          "facts": 131,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 140,
+          "without_consolidation": 9,
+          "rate_without_consolidation": 6.428571428571429
+        },
+        {
+          "session": "facts 140-159",
+          "step": 159,
+          "facts": 148,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 160,
+          "without_consolidation": 12,
+          "rate_without_consolidation": 7.5
+        },
+        {
+          "session": "facts 160-179",
+          "step": 179,
+          "facts": 166,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 180,
+          "without_consolidation": 14,
+          "rate_without_consolidation": 7.777777777777778
+        },
+        {
+          "session": "facts 180-199",
+          "step": 199,
+          "facts": 183,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 200,
+          "without_consolidation": 17,
+          "rate_without_consolidation": 8.5
+        },
+        {
+          "session": "facts 200-219",
+          "step": 219,
+          "facts": 192,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 211,
+          "without_consolidation": 19,
+          "rate_without_consolidation": 9.004739336492891
+        },
+        {
+          "session": "facts 220-239",
+          "step": 239,
+          "facts": 204,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 230,
+          "without_consolidation": 26,
+          "rate_without_consolidation": 11.304347826086957
+        },
+        {
+          "session": "facts 240-259",
+          "step": 259,
+          "facts": 221,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 250,
+          "without_consolidation": 29,
+          "rate_without_consolidation": 11.6
+        },
+        {
+          "session": "facts 260-279",
+          "step": 279,
+          "facts": 235,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 270,
+          "without_consolidation": 35,
+          "rate_without_consolidation": 12.962962962962964
+        },
+        {
+          "session": "facts 280-299",
+          "step": 299,
+          "facts": 249,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 290,
+          "without_consolidation": 41,
+          "rate_without_consolidation": 14.137931034482758
+        },
+        {
+          "session": "facts 300-319",
+          "step": 319,
+          "facts": 263,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 310,
+          "without_consolidation": 47,
+          "rate_without_consolidation": 15.161290322580646
+        },
+        {
+          "session": "facts 320-339",
+          "step": 339,
+          "facts": 271,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 329,
+          "without_consolidation": 57,
+          "rate_without_consolidation": 17.325227963525837
+        },
+        {
+          "session": "facts 340-359",
+          "step": 359,
+          "facts": 285,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 349,
+          "without_consolidation": 63,
+          "rate_without_consolidation": 18.05157593123209
+        },
+        {
+          "session": "facts 360-379",
+          "step": 379,
+          "facts": 295,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 369,
+          "without_consolidation": 73,
+          "rate_without_consolidation": 19.78319783197832
+        },
+        {
+          "session": "facts 380-399",
+          "step": 399,
+          "facts": 305,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 389,
+          "without_consolidation": 83,
+          "rate_without_consolidation": 21.336760925449873
+        },
+        {
+          "session": "facts 400-419",
+          "step": 419,
+          "facts": 315,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 409,
+          "without_consolidation": 93,
+          "rate_without_consolidation": 22.73838630806846
+        },
+        {
+          "session": "facts 420-439",
+          "step": 439,
+          "facts": 326,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 429,
+          "without_consolidation": 102,
+          "rate_without_consolidation": 23.776223776223777
+        },
+        {
+          "session": "facts 440-454",
+          "step": 453,
+          "facts": 333,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 443,
+          "without_consolidation": 109,
+          "rate_without_consolidation": 24.604966139954854
+        }
+      ]
+    }
+  }
+}

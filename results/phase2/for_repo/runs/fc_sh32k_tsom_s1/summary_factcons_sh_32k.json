@@ -1,0 +1,1231 @@
+{
+  "run_name": "fc_sh32k_tsom_s1",
+  "system": "tsom",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "variant": "sh",
+  "size": "32k",
+  "chunk_facts": 20,
+  "retrieve_k": 10,
+  "samples": 1,
+  "questions": 100,
+  "accuracy": 0.79,
+  "f1": 0.763079365079365,
+  "stale": {
+    "changed_questions": 64,
+    "stale_answers": 20,
+    "stale_rate": 0.3125
+  },
+  "per_sample": {
+    "sh_32k": {
+      "n": 100,
+      "accuracy": 0.79,
+      "f1": 0.763079365079365,
+      "changed_questions": 64,
+      "stale_answers": 20,
+      "stale_rate": 0.3125
+    }
+  },
+  "cost": {
+    "writes": 116,
+    "llm_calls_per_write": 2.913793103448276,
+    "seconds_per_write": 13.420718270137913,
+    "evolution_rate": 0.9224137931034483,
+    "answer_prompt_tokens_per_question": 7094.33,
+    "temporal_writes": 116,
+    "temporal_llm_calls_per_write": 6.629310344827586,
+    "temporal_seconds_per_write": 15.015930750689748,
+    "total_llm_calls_per_write": 9.543103448275861,
+    "total_seconds_per_write": 28.43664902082766,
+    "temporal_failures": 0,
+    "fact_ops": {
+      "ADD": 1749,
+      "REPLACE": 538,
+      "REAFFIRM": 4
+    },
+    "ingest_llm_calls": 1107,
+    "ingest_prompt_tokens": 1181128,
+    "ingest_completion_tokens": 195168,
+    "answer_llm_calls": 100,
+    "answer_prompt_tokens": 709433,
+    "answer_completion_tokens": 388
+  },
+  "tsom": {
+    "fact_ops": {
+      "ADD": 1749,
+      "REPLACE": 538,
+      "REAFFIRM": 4
+    },
+    "failures": 0
+  },
+  "contradictions": {
+    "checkpoints": 116,
+    "checkpoints_lower": 114,
+    "final_rate": 0.0,
+    "final_rate_without_consolidation": 23.043288150415393,
+    "per_sample": {
+      "sh_32k": [
+        {
+          "session": "facts 0-19",
+          "step": 19,
+          "facts": 20,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 20,
+          "without_consolidation": 0,
+          "rate_without_consolidation": 0.0
+        },
+        {
+          "session": "facts 20-39",
+          "step": 39,
+          "facts": 40,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 40,
+          "without_consolidation": 0,
+          "rate_without_consolidation": 0.0
+        },
+        {
+          "session": "facts 40-59",
+          "step": 59,
+          "facts": 59,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 60,
+          "without_consolidation": 1,
+          "rate_without_consolidation": 1.6666666666666667
+        },
+        {
+          "session": "facts 60-79",
+          "step": 79,
+          "facts": 79,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 80,
+          "without_consolidation": 1,
+          "rate_without_consolidation": 1.25
+        },
+        {
+          "session": "facts 80-99",
+          "step": 99,
+          "facts": 99,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 100,
+          "without_consolidation": 1,
+          "rate_without_consolidation": 1.0
+        },
+        {
+          "session": "facts 100-119",
+          "step": 119,
+          "facts": 119,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 120,
+          "without_consolidation": 1,
+          "rate_without_consolidation": 0.8333333333333334
+        },
+        {
+          "session": "facts 120-139",
+          "step": 139,
+          "facts": 139,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 140,
+          "without_consolidation": 1,
+          "rate_without_consolidation": 0.7142857142857143
+        },
+        {
+          "session": "facts 140-159",
+          "step": 159,
+          "facts": 158,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 160,
+          "without_consolidation": 2,
+          "rate_without_consolidation": 1.25
+        },
+        {
+          "session": "facts 160-179",
+          "step": 179,
+          "facts": 178,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 180,
+          "without_consolidation": 2,
+          "rate_without_consolidation": 1.1111111111111112
+        },
+        {
+          "session": "facts 180-199",
+          "step": 199,
+          "facts": 196,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 200,
+          "without_consolidation": 4,
+          "rate_without_consolidation": 2.0
+        },
+        {
+          "session": "facts 200-219",
+          "step": 219,
+          "facts": 214,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 219,
+          "without_consolidation": 5,
+          "rate_without_consolidation": 2.2831050228310503
+        },
+        {
+          "session": "facts 220-239",
+          "step": 239,
+          "facts": 231,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 238,
+          "without_consolidation": 7,
+          "rate_without_consolidation": 2.9411764705882355
+        },
+        {
+          "session": "facts 240-259",
+          "step": 259,
+          "facts": 250,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 258,
+          "without_consolidation": 8,
+          "rate_without_consolidation": 3.10077519379845
+        },
+        {
+          "session": "facts 260-279",
+          "step": 279,
+          "facts": 270,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 278,
+          "without_consolidation": 8,
+          "rate_without_consolidation": 2.8776978417266186
+        },
+        {
+          "session": "facts 280-299",
+          "step": 299,
+          "facts": 290,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 298,
+          "without_consolidation": 8,
+          "rate_without_consolidation": 2.684563758389262
+        },
+        {
+          "session": "facts 300-319",
+          "step": 319,
+          "facts": 309,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 318,
+          "without_consolidation": 9,
+          "rate_without_consolidation": 2.830188679245283
+        },
+        {
+          "session": "facts 320-339",
+          "step": 339,
+          "facts": 327,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 338,
+          "without_consolidation": 11,
+          "rate_without_consolidation": 3.2544378698224854
+        },
+        {
+          "session": "facts 340-359",
+          "step": 359,
+          "facts": 346,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 358,
+          "without_consolidation": 12,
+          "rate_without_consolidation": 3.35195530726257
+        },
+        {
+          "session": "facts 360-379",
+          "step": 379,
+          "facts": 362,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 378,
+          "without_consolidation": 16,
+          "rate_without_consolidation": 4.232804232804233
+        },
+        {
+          "session": "facts 380-399",
+          "step": 399,
+          "facts": 381,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 398,
+          "without_consolidation": 17,
+          "rate_without_consolidation": 4.271356783919598
+        },
+        {
+          "session": "facts 400-419",
+          "step": 419,
+          "facts": 397,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 418,
+          "without_consolidation": 21,
+          "rate_without_consolidation": 5.023923444976076
+        },
+        {
+          "session": "facts 420-439",
+          "step": 439,
+          "facts": 416,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 438,
+          "without_consolidation": 22,
+          "rate_without_consolidation": 5.0228310502283104
+        },
+        {
+          "session": "facts 440-459",
+          "step": 459,
+          "facts": 434,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 458,
+          "without_consolidation": 24,
+          "rate_without_consolidation": 5.240174672489083
+        },
+        {
+          "session": "facts 460-479",
+          "step": 479,
+          "facts": 452,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 478,
+          "without_consolidation": 26,
+          "rate_without_consolidation": 5.439330543933054
+        },
+        {
+          "session": "facts 480-499",
+          "step": 499,
+          "facts": 469,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 498,
+          "without_consolidation": 29,
+          "rate_without_consolidation": 5.823293172690763
+        },
+        {
+          "session": "facts 500-519",
+          "step": 519,
+          "facts": 487,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 518,
+          "without_consolidation": 30,
+          "rate_without_consolidation": 5.7915057915057915
+        },
+        {
+          "session": "facts 520-539",
+          "step": 539,
+          "facts": 507,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 538,
+          "without_consolidation": 30,
+          "rate_without_consolidation": 5.5762081784386615
+        },
+        {
+          "session": "facts 540-559",
+          "step": 559,
+          "facts": 526,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 558,
+          "without_consolidation": 31,
+          "rate_without_consolidation": 5.555555555555555
+        },
+        {
+          "session": "facts 560-579",
+          "step": 579,
+          "facts": 542,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 578,
+          "without_consolidation": 35,
+          "rate_without_consolidation": 6.055363321799308
+        },
+        {
+          "session": "facts 580-599",
+          "step": 599,
+          "facts": 559,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 598,
+          "without_consolidation": 38,
+          "rate_without_consolidation": 6.354515050167224
+        },
+        {
+          "session": "facts 600-619",
+          "step": 619,
+          "facts": 578,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 618,
+          "without_consolidation": 39,
+          "rate_without_consolidation": 6.310679611650485
+        },
+        {
+          "session": "facts 620-639",
+          "step": 639,
+          "facts": 594,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 638,
+          "without_consolidation": 43,
+          "rate_without_consolidation": 6.739811912225705
+        },
+        {
+          "session": "facts 640-659",
+          "step": 659,
+          "facts": 610,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 658,
+          "without_consolidation": 47,
+          "rate_without_consolidation": 7.142857142857143
+        },
+        {
+          "session": "facts 660-679",
+          "step": 679,
+          "facts": 629,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 678,
+          "without_consolidation": 48,
+          "rate_without_consolidation": 7.079646017699115
+        },
+        {
+          "session": "facts 680-699",
+          "step": 699,
+          "facts": 647,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 698,
+          "without_consolidation": 50,
+          "rate_without_consolidation": 7.163323782234957
+        },
+        {
+          "session": "facts 700-719",
+          "step": 719,
+          "facts": 664,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 718,
+          "without_consolidation": 53,
+          "rate_without_consolidation": 7.381615598885793
+        },
+        {
+          "session": "facts 720-739",
+          "step": 739,
+          "facts": 681,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 738,
+          "without_consolidation": 55,
+          "rate_without_consolidation": 7.452574525745257
+        },
+        {
+          "session": "facts 740-759",
+          "step": 759,
+          "facts": 697,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 758,
+          "without_consolidation": 59,
+          "rate_without_consolidation": 7.783641160949868
+        },
+        {
+          "session": "facts 760-779",
+          "step": 779,
+          "facts": 716,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 778,
+          "without_consolidation": 60,
+          "rate_without_consolidation": 7.712082262210797
+        },
+        {
+          "session": "facts 780-799",
+          "step": 799,
+          "facts": 733,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 798,
+          "without_consolidation": 63,
+          "rate_without_consolidation": 7.894736842105263
+        },
+        {
+          "session": "facts 800-819",
+          "step": 819,
+          "facts": 750,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 818,
+          "without_consolidation": 66,
+          "rate_without_consolidation": 8.06845965770171
+        },
+        {
+          "session": "facts 820-839",
+          "step": 839,
+          "facts": 766,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 838,
+          "without_consolidation": 70,
+          "rate_without_consolidation": 8.353221957040573
+        },
+        {
+          "session": "facts 840-859",
+          "step": 859,
+          "facts": 782,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 858,
+          "without_consolidation": 74,
+          "rate_without_consolidation": 8.624708624708624
+        },
+        {
+          "session": "facts 860-879",
+          "step": 879,
+          "facts": 796,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 878,
+          "without_consolidation": 80,
+          "rate_without_consolidation": 9.111617312072893
+        },
+        {
+          "session": "facts 880-899",
+          "step": 899,
+          "facts": 814,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 898,
+          "without_consolidation": 82,
+          "rate_without_consolidation": 9.131403118040089
+        },
+        {
+          "session": "facts 900-919",
+          "step": 919,
+          "facts": 830,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 918,
+          "without_consolidation": 86,
+          "rate_without_consolidation": 9.368191721132897
+        },
+        {
+          "session": "facts 920-939",
+          "step": 939,
+          "facts": 845,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 938,
+          "without_consolidation": 90,
+          "rate_without_consolidation": 9.594882729211088
+        },
+        {
+          "session": "facts 940-959",
+          "step": 959,
+          "facts": 862,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 958,
+          "without_consolidation": 93,
+          "rate_without_consolidation": 9.707724425887266
+        },
+        {
+          "session": "facts 960-979",
+          "step": 979,
+          "facts": 879,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 978,
+          "without_consolidation": 96,
+          "rate_without_consolidation": 9.815950920245399
+        },
+        {
+          "session": "facts 980-999",
+          "step": 999,
+          "facts": 894,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 998,
+          "without_consolidation": 101,
+          "rate_without_consolidation": 10.120240480961924
+        },
+        {
+          "session": "facts 1000-1019",
+          "step": 1019,
+          "facts": 904,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1018,
+          "without_consolidation": 111,
+          "rate_without_consolidation": 10.903732809430256
+        },
+        {
+          "session": "facts 1020-1039",
+          "step": 1039,
+          "facts": 919,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1038,
+          "without_consolidation": 116,
+          "rate_without_consolidation": 11.175337186897881
+        },
+        {
+          "session": "facts 1040-1059",
+          "step": 1059,
+          "facts": 936,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1058,
+          "without_consolidation": 119,
+          "rate_without_consolidation": 11.247637051039698
+        },
+        {
+          "session": "facts 1060-1079",
+          "step": 1079,
+          "facts": 953,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1078,
+          "without_consolidation": 122,
+          "rate_without_consolidation": 11.317254174397032
+        },
+        {
+          "session": "facts 1080-1099",
+          "step": 1099,
+          "facts": 971,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1098,
+          "without_consolidation": 124,
+          "rate_without_consolidation": 11.293260473588342
+        },
+        {
+          "session": "facts 1100-1119",
+          "step": 1119,
+          "facts": 986,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1118,
+          "without_consolidation": 129,
+          "rate_without_consolidation": 11.538461538461538
+        },
+        {
+          "session": "facts 1120-1139",
+          "step": 1139,
+          "facts": 999,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1138,
+          "without_consolidation": 136,
+          "rate_without_consolidation": 11.95079086115993
+        },
+        {
+          "session": "facts 1140-1159",
+          "step": 1159,
+          "facts": 1015,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1158,
+          "without_consolidation": 140,
+          "rate_without_consolidation": 12.089810017271157
+        },
+        {
+          "session": "facts 1160-1179",
+          "step": 1179,
+          "facts": 1030,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1177,
+          "without_consolidation": 144,
+          "rate_without_consolidation": 12.234494477485132
+        },
+        {
+          "session": "facts 1180-1199",
+          "step": 1199,
+          "facts": 1044,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1197,
+          "without_consolidation": 150,
+          "rate_without_consolidation": 12.531328320802006
+        },
+        {
+          "session": "facts 1200-1219",
+          "step": 1219,
+          "facts": 1060,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1217,
+          "without_consolidation": 154,
+          "rate_without_consolidation": 12.65406737880033
+        },
+        {
+          "session": "facts 1220-1239",
+          "step": 1239,
+          "facts": 1072,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1237,
+          "without_consolidation": 162,
+          "rate_without_consolidation": 13.096200485044463
+        },
+        {
+          "session": "facts 1240-1259",
+          "step": 1259,
+          "facts": 1087,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1257,
+          "without_consolidation": 167,
+          "rate_without_consolidation": 13.285600636435959
+        },
+        {
+          "session": "facts 1260-1279",
+          "step": 1279,
+          "facts": 1104,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1275,
+          "without_consolidation": 168,
+          "rate_without_consolidation": 13.176470588235293
+        },
+        {
+          "session": "facts 1280-1299",
+          "step": 1299,
+          "facts": 1120,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1295,
+          "without_consolidation": 172,
+          "rate_without_consolidation": 13.281853281853282
+        },
+        {
+          "session": "facts 1300-1319",
+          "step": 1319,
+          "facts": 1131,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1315,
+          "without_consolidation": 181,
+          "rate_without_consolidation": 13.76425855513308
+        },
+        {
+          "session": "facts 1320-1339",
+          "step": 1339,
+          "facts": 1146,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1335,
+          "without_consolidation": 186,
+          "rate_without_consolidation": 13.932584269662922
+        },
+        {
+          "session": "facts 1340-1359",
+          "step": 1349,
+          "facts": 1155,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1345,
+          "without_consolidation": 187,
+          "rate_without_consolidation": 13.903345724907064
+        },
+        {
+          "session": "facts 1360-1379",
+          "step": 1379,
+          "facts": 1167,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1365,
+          "without_consolidation": 194,
+          "rate_without_consolidation": 14.212454212454212
+        },
+        {
+          "session": "facts 1380-1399",
+          "step": 1399,
+          "facts": 1180,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1385,
+          "without_consolidation": 201,
+          "rate_without_consolidation": 14.512635379061372
+        },
+        {
+          "session": "facts 1400-1419",
+          "step": 1419,
+          "facts": 1190,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1402,
+          "without_consolidation": 208,
+          "rate_without_consolidation": 14.835948644793152
+        },
+        {
+          "session": "facts 1420-1439",
+          "step": 1439,
+          "facts": 1204,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1421,
+          "without_consolidation": 213,
+          "rate_without_consolidation": 14.989444053483462
+        },
+        {
+          "session": "facts 1440-1459",
+          "step": 1459,
+          "facts": 1214,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1441,
+          "without_consolidation": 221,
+          "rate_without_consolidation": 15.336571825121444
+        },
+        {
+          "session": "facts 1460-1479",
+          "step": 1479,
+          "facts": 1229,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1461,
+          "without_consolidation": 226,
+          "rate_without_consolidation": 15.468856947296372
+        },
+        {
+          "session": "facts 1480-1499",
+          "step": 1499,
+          "facts": 1246,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1481,
+          "without_consolidation": 229,
+          "rate_without_consolidation": 15.462525320729236
+        },
+        {
+          "session": "facts 1500-1519",
+          "step": 1519,
+          "facts": 1261,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1501,
+          "without_consolidation": 234,
+          "rate_without_consolidation": 15.58960692871419
+        },
+        {
+          "session": "facts 1520-1539",
+          "step": 1539,
+          "facts": 1274,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1519,
+          "without_consolidation": 239,
+          "rate_without_consolidation": 15.734035549703753
+        },
+        {
+          "session": "facts 1540-1559",
+          "step": 1559,
+          "facts": 1288,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1539,
+          "without_consolidation": 245,
+          "rate_without_consolidation": 15.919428200129955
+        },
+        {
+          "session": "facts 1560-1579",
+          "step": 1579,
+          "facts": 1302,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1558,
+          "without_consolidation": 250,
+          "rate_without_consolidation": 16.046213093709884
+        },
+        {
+          "session": "facts 1580-1599",
+          "step": 1599,
+          "facts": 1316,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1578,
+          "without_consolidation": 256,
+          "rate_without_consolidation": 16.223067173637517
+        },
+        {
+          "session": "facts 1600-1619",
+          "step": 1619,
+          "facts": 1329,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1598,
+          "without_consolidation": 263,
+          "rate_without_consolidation": 16.45807259073842
+        },
+        {
+          "session": "facts 1620-1639",
+          "step": 1639,
+          "facts": 1345,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1618,
+          "without_consolidation": 267,
+          "rate_without_consolidation": 16.50185414091471
+        },
+        {
+          "session": "facts 1640-1659",
+          "step": 1659,
+          "facts": 1360,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1638,
+          "without_consolidation": 272,
+          "rate_without_consolidation": 16.605616605616607
+        },
+        {
+          "session": "facts 1660-1679",
+          "step": 1679,
+          "facts": 1371,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1658,
+          "without_consolidation": 281,
+          "rate_without_consolidation": 16.9481302774427
+        },
+        {
+          "session": "facts 1680-1699",
+          "step": 1699,
+          "facts": 1386,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1678,
+          "without_consolidation": 286,
+          "rate_without_consolidation": 17.044100119189512
+        },
+        {
+          "session": "facts 1700-1719",
+          "step": 1719,
+          "facts": 1402,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1698,
+          "without_consolidation": 290,
+          "rate_without_consolidation": 17.078916372202592
+        },
+        {
+          "session": "facts 1720-1739",
+          "step": 1739,
+          "facts": 1416,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1718,
+          "without_consolidation": 296,
+          "rate_without_consolidation": 17.229336437718278
+        },
+        {
+          "session": "facts 1740-1759",
+          "step": 1759,
+          "facts": 1426,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1738,
+          "without_consolidation": 306,
+          "rate_without_consolidation": 17.60644418872267
+        },
+        {
+          "session": "facts 1760-1779",
+          "step": 1779,
+          "facts": 1440,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1758,
+          "without_consolidation": 311,
+          "rate_without_consolidation": 17.690557451649603
+        },
+        {
+          "session": "facts 1780-1799",
+          "step": 1799,
+          "facts": 1455,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1778,
+          "without_consolidation": 316,
+          "rate_without_consolidation": 17.77277840269966
+        },
+        {
+          "session": "facts 1800-1819",
+          "step": 1819,
+          "facts": 1469,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1798,
+          "without_consolidation": 321,
+          "rate_without_consolidation": 17.853170189099
+        },
+        {
+          "session": "facts 1820-1839",
+          "step": 1839,
+          "facts": 1482,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1818,
+          "without_consolidation": 328,
+          "rate_without_consolidation": 18.04180418041804
+        },
+        {
+          "session": "facts 1840-1859",
+          "step": 1859,
+          "facts": 1493,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1838,
+          "without_consolidation": 337,
+          "rate_without_consolidation": 18.335146898803046
+        },
+        {
+          "session": "facts 1860-1879",
+          "step": 1878,
+          "facts": 1504,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1857,
+          "without_consolidation": 345,
+          "rate_without_consolidation": 18.578352180936996
+        },
+        {
+          "session": "facts 1880-1899",
+          "step": 1899,
+          "facts": 1518,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1877,
+          "without_consolidation": 351,
+          "rate_without_consolidation": 18.700053276505063
+        },
+        {
+          "session": "facts 1900-1919",
+          "step": 1919,
+          "facts": 1534,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1897,
+          "without_consolidation": 355,
+          "rate_without_consolidation": 18.71375856615709
+        },
+        {
+          "session": "facts 1920-1939",
+          "step": 1939,
+          "facts": 1547,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1917,
+          "without_consolidation": 362,
+          "rate_without_consolidation": 18.883672404799164
+        },
+        {
+          "session": "facts 1940-1959",
+          "step": 1959,
+          "facts": 1558,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1937,
+          "without_consolidation": 371,
+          "rate_without_consolidation": 19.153329891584924
+        },
+        {
+          "session": "facts 1960-1979",
+          "step": 1979,
+          "facts": 1567,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1957,
+          "without_consolidation": 382,
+          "rate_without_consolidation": 19.51967296882984
+        },
+        {
+          "session": "facts 1980-1999",
+          "step": 1999,
+          "facts": 1581,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1977,
+          "without_consolidation": 388,
+          "rate_without_consolidation": 19.62569549822964
+        },
+        {
+          "session": "facts 2000-2019",
+          "step": 2019,
+          "facts": 1589,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 1997,
+          "without_consolidation": 400,
+          "rate_without_consolidation": 20.030045067601403
+        },
+        {
+          "session": "facts 2020-2039",
+          "step": 2039,
+          "facts": 1604,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2017,
+          "without_consolidation": 405,
+          "rate_without_consolidation": 20.079325731284086
+        },
+        {
+          "session": "facts 2040-2059",
+          "step": 2059,
+          "facts": 1614,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2037,
+          "without_consolidation": 414,
+          "rate_without_consolidation": 20.3240058910162
+        },
+        {
+          "session": "facts 2060-2079",
+          "step": 2079,
+          "facts": 1625,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2057,
+          "without_consolidation": 423,
+          "rate_without_consolidation": 20.563928050559067
+        },
+        {
+          "session": "facts 2080-2099",
+          "step": 2099,
+          "facts": 1636,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2077,
+          "without_consolidation": 431,
+          "rate_without_consolidation": 20.751083293211362
+        },
+        {
+          "session": "facts 2100-2119",
+          "step": 2119,
+          "facts": 1643,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2097,
+          "without_consolidation": 444,
+          "rate_without_consolidation": 21.17310443490701
+        },
+        {
+          "session": "facts 2120-2139",
+          "step": 2139,
+          "facts": 1653,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2117,
+          "without_consolidation": 454,
+          "rate_without_consolidation": 21.44544166273028
+        },
+        {
+          "session": "facts 2140-2159",
+          "step": 2159,
+          "facts": 1665,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2137,
+          "without_consolidation": 461,
+          "rate_without_consolidation": 21.572297613476838
+        },
+        {
+          "session": "facts 2160-2179",
+          "step": 2179,
+          "facts": 1676,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2157,
+          "without_consolidation": 470,
+          "rate_without_consolidation": 21.789522484932778
+        },
+        {
+          "session": "facts 2180-2199",
+          "step": 2199,
+          "facts": 1686,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2177,
+          "without_consolidation": 480,
+          "rate_without_consolidation": 22.048690858980247
+        },
+        {
+          "session": "facts 2200-2219",
+          "step": 2219,
+          "facts": 1697,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2197,
+          "without_consolidation": 489,
+          "rate_without_consolidation": 22.25762403277196
+        },
+        {
+          "session": "facts 2220-2239",
+          "step": 2239,
+          "facts": 1710,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2217,
+          "without_consolidation": 496,
+          "rate_without_consolidation": 22.37257555254849
+        },
+        {
+          "session": "facts 2240-2259",
+          "step": 2259,
+          "facts": 1723,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2237,
+          "without_consolidation": 503,
+          "rate_without_consolidation": 22.48547161376844
+        },
+        {
+          "session": "facts 2260-2279",
+          "step": 2279,
+          "facts": 1735,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2257,
+          "without_consolidation": 511,
+          "rate_without_consolidation": 22.640673460345592
+        },
+        {
+          "session": "facts 2280-2299",
+          "step": 2299,
+          "facts": 1744,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2277,
+          "without_consolidation": 522,
+          "rate_without_consolidation": 22.92490118577075
+        },
+        {
+          "session": "facts 2300-2309",
+          "step": 2309,
+          "facts": 1749,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2287,
+          "without_consolidation": 527,
+          "rate_without_consolidation": 23.043288150415393
+        }
+      ]
+    }
+  }
+}

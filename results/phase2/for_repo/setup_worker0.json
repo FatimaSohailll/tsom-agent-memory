@@ -1,0 +1,48 @@
+{
+  "code_commit": "9e1fc0e8ba7783d1049cea5c71709049629fd47f",
+  "branch": "feat/gap-measurement",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "model_id": "NAME          ID              SIZE      MODIFIED      \nqwen2.5:3b    357c53fb659c    1.9 GB    4 seconds ago",
+  "ollama": "ollama version is 0.40.15",
+  "context_length": 16384,
+  "temperature": 0.0,
+  "seeds": {
+    "fc6k": [
+      1,
+      2,
+      3
+    ],
+    "scenarios": [
+      1
+    ],
+    "fc32k": [
+      1
+    ],
+    "locomo": [
+      1
+    ]
+  },
+  "locomo_conversations": [
+    1,
+    8
+  ],
+  "systems": {
+    "rag": [
+      "configs/rag_qwen2.5-3b.json",
+      []
+    ],
+    "amem": [
+      "configs/amem_qwen2.5-3b.json",
+      []
+    ],
+    "tsom": [
+      "configs/tsom_qwen2.5-3b.json",
+      []
+    ]
+  },
+  "python": "3.13.16",
+  "gpu": "Tesla T4",
+  "started": "2026-11-08 07:51:10",
+  "worker": 0
+}

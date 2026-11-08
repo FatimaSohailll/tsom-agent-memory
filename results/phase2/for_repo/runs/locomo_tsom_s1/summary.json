@@ -1,0 +1,353 @@
+{
+  "run_name": "locomo_tsom_s1",
+  "system": "tsom",
+  "backend": "ollama",
+  "model": "qwen2.5:3b",
+  "conversations": 2,
+  "conversation_ids": [
+    1,
+    8
+  ],
+  "scores": {
+    "Multi-hop": {
+      "n": 48,
+      "f1": 24.12732986840655,
+      "bleu1": 13.070839696522851
+    },
+    "Temporal": {
+      "n": 59,
+      "f1": 33.16787732041969,
+      "bleu1": 26.07333868243084
+    },
+    "Open-domain": {
+      "n": 13,
+      "f1": 22.264957264957268,
+      "bleu1": 20.19554669548764
+    },
+    "Single-hop": {
+      "n": 117,
+      "f1": 25.76449220684448,
+      "bleu1": 20.722853360591344
+    },
+    "Adversarial": {
+      "n": 64,
+      "f1": 35.060338966588965,
+      "bleu1": 31.788916164800696
+    },
+    "Overall": {
+      "n": 301,
+      "f1": 28.779961202974146,
+      "bleu1": 22.88150788197438
+    }
+  },
+  "cost": {
+    "writes": 878,
+    "llm_calls_per_write": 2.7585421412300684,
+    "seconds_per_write": 3.8002437469111654,
+    "evolution_rate": 0.7505694760820045,
+    "answer_prompt_tokens_per_question": 1520.9568106312292,
+    "temporal_writes": 878,
+    "temporal_llm_calls_per_write": 1.1457858769931664,
+    "temporal_seconds_per_write": 0.2836820427721938,
+    "total_llm_calls_per_write": 3.9043280182232345,
+    "total_seconds_per_write": 4.083925789683359,
+    "temporal_failures": 0,
+    "fact_ops": {
+      "ADD": 53,
+      "REPLACE": 127,
+      "REAFFIRM": 5
+    }
+  },
+  "contradictions": {
+    "checkpoints": 28,
+    "checkpoints_lower": 27,
+    "final_rate": 1.3157894736842106,
+    "final_rate_without_consolidation": 19.333333333333332,
+    "per_sample": {
+      "1": [
+        {
+          "session": "4:04 pm on 20 January, 2023",
+          "step": 3,
+          "facts": 2,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 3,
+          "without_consolidation": 1,
+          "rate_without_consolidation": 33.333333333333336
+        },
+        {
+          "session": "10:43 am on 4 February, 2023",
+          "step": 9,
+          "facts": 7,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 9,
+          "without_consolidation": 2,
+          "rate_without_consolidation": 22.22222222222222
+        },
+        {
+          "session": "9:32 am on 8 February, 2023",
+          "step": 22,
+          "facts": 7,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 21,
+          "without_consolidation": 4,
+          "rate_without_consolidation": 19.047619047619047
+        },
+        {
+          "session": "2:35 pm on 16 March, 2023",
+          "step": 27,
+          "facts": 10,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 26,
+          "without_consolidation": 6,
+          "rate_without_consolidation": 23.076923076923077
+        },
+        {
+          "session": "1:26 pm on 3 April, 2023",
+          "step": 33,
+          "facts": 11,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 32,
+          "without_consolidation": 7,
+          "rate_without_consolidation": 21.875
+        },
+        {
+          "session": "10:33 am on 9 April, 2023",
+          "step": 39,
+          "facts": 11,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 37,
+          "without_consolidation": 8,
+          "rate_without_consolidation": 21.62162162162162
+        },
+        {
+          "session": "11:24 am on 25 April, 2023",
+          "step": 43,
+          "facts": 11,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 41,
+          "without_consolidation": 8,
+          "rate_without_consolidation": 19.51219512195122
+        },
+        {
+          "session": "3:14 pm on 11 May, 2023",
+          "step": 50,
+          "facts": 13,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 47,
+          "without_consolidation": 8,
+          "rate_without_consolidation": 17.02127659574468
+        },
+        {
+          "session": "7:18 pm on 27 May, 2023",
+          "step": 63,
+          "facts": 17,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 59,
+          "without_consolidation": 11,
+          "rate_without_consolidation": 18.64406779661017
+        },
+        {
+          "session": "8:29 pm on 13 June, 2023",
+          "step": 86,
+          "facts": 30,
+          "contradictions": 1,
+          "rate": 3.3333333333333335,
+          "all_facts": 82,
+          "without_consolidation": 13,
+          "rate_without_consolidation": 15.853658536585366
+        },
+        {
+          "session": "9:38 pm on 16 June, 2023",
+          "step": 108,
+          "facts": 32,
+          "contradictions": 1,
+          "rate": 3.125,
+          "all_facts": 104,
+          "without_consolidation": 17,
+          "rate_without_consolidation": 16.346153846153847
+        },
+        {
+          "session": "10:04 am on 19 June, 2023",
+          "step": 121,
+          "facts": 36,
+          "contradictions": 1,
+          "rate": 2.7777777777777777,
+          "all_facts": 117,
+          "without_consolidation": 19,
+          "rate_without_consolidation": 16.23931623931624
+        },
+        {
+          "session": "2:15 pm on 21 June, 2023",
+          "step": 123,
+          "facts": 36,
+          "contradictions": 1,
+          "rate": 2.7777777777777777,
+          "all_facts": 119,
+          "without_consolidation": 20,
+          "rate_without_consolidation": 16.80672268907563
+        },
+        {
+          "session": "1:25 pm on 9 July, 2023",
+          "step": 139,
+          "facts": 37,
+          "contradictions": 1,
+          "rate": 2.7027027027027026,
+          "all_facts": 135,
+          "without_consolidation": 21,
+          "rate_without_consolidation": 15.555555555555555
+        },
+        {
+          "session": "5:44 pm on 21 July, 2023",
+          "step": 147,
+          "facts": 37,
+          "contradictions": 1,
+          "rate": 2.7027027027027026,
+          "all_facts": 143,
+          "without_consolidation": 23,
+          "rate_without_consolidation": 16.083916083916083
+        },
+        {
+          "session": "6:46 pm on 23 July, 2023",
+          "step": 155,
+          "facts": 38,
+          "contradictions": 1,
+          "rate": 2.6315789473684212,
+          "all_facts": 150,
+          "without_consolidation": 23,
+          "rate_without_consolidation": 15.333333333333334
+        }
+      ],
+      "8": [
+        {
+          "session": "10:52 am on 27 July, 2023",
+          "step": 2,
+          "facts": 2,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 2,
+          "without_consolidation": 0,
+          "rate_without_consolidation": 0.0
+        },
+        {
+          "session": "6:17 pm on 19 August, 2023",
+          "step": 4,
+          "facts": 3,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 4,
+          "without_consolidation": 1,
+          "rate_without_consolidation": 25.0
+        },
+        {
+          "session": "1:50 pm on 17 October, 2023",
+          "step": 8,
+          "facts": 7,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 8,
+          "without_consolidation": 1,
+          "rate_without_consolidation": 12.5
+        },
+        {
+          "session": "2:56 pm on 25 October, 2023",
+          "step": 10,
+          "facts": 8,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 10,
+          "without_consolidation": 2,
+          "rate_without_consolidation": 20.0
+        },
+        {
+          "session": "9:13 pm on 9 November, 2023",
+          "step": 18,
+          "facts": 13,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 18,
+          "without_consolidation": 4,
+          "rate_without_consolidation": 22.22222222222222
+        },
+        {
+          "session": "7:30 pm on 21 November, 2023",
+          "step": 22,
+          "facts": 14,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 22,
+          "without_consolidation": 5,
+          "rate_without_consolidation": 22.727272727272727
+        },
+        {
+          "session": "8:16 pm on 5 December, 2023",
+          "step": 23,
+          "facts": 14,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 23,
+          "without_consolidation": 6,
+          "rate_without_consolidation": 26.08695652173913
+        },
+        {
+          "session": "6:48 pm on 17 December, 2023",
+          "step": 24,
+          "facts": 14,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 24,
+          "without_consolidation": 6,
+          "rate_without_consolidation": 25.0
+        },
+        {
+          "session": "4:25 pm on 26 December, 2023",
+          "step": 25,
+          "facts": 14,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 25,
+          "without_consolidation": 6,
+          "rate_without_consolidation": 24.0
+        },
+        {
+          "session": "11:00 am on 31 December, 2023",
+          "step": 26,
+          "facts": 14,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 26,
+          "without_consolidation": 6,
+          "rate_without_consolidation": 23.076923076923077
+        },
+        {
+          "session": "12:17 am on 10 January, 2024",
+          "step": 29,
+          "facts": 15,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 29,
+          "without_consolidation": 7,
+          "rate_without_consolidation": 24.137931034482758
+        },
+        {
+          "session": "9:37 pm on 11 January, 2024",
+          "step": 30,
+          "facts": 15,
+          "contradictions": 0,
+          "rate": 0.0,
+          "all_facts": 30,
+          "without_consolidation": 7,
+          "rate_without_consolidation": 23.333333333333332
+        }
+      ]
+    }
+  }
+}
