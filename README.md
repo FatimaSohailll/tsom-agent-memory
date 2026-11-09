@@ -1,32 +1,32 @@
 # Time-Scoped Ontological Memory (TSOM)
 
-Conflict-aware memory for persistent LLM agents. AI4015 Agentic AI, Fall 2026, group G1-08 (Fatima Sohail, Menahil Ahmad).
+AI4015 Agentic AI, Fall 2026, group G1-08 (Fatima Sohail, Menahil Ahmad).
 
-We build on A-Mem (Xu et al., NeurIPS 2025). A-Mem stores every turn as a linked note but never checks whether a new fact contradicts an old one, and it has no notion of when a fact stopped being true. TSOM adds a temporal fact layer on top of A-Mem. Three memory systems are compared through one shared agent, tool interface and harness (LoCoMo, FactConsolidation and our change scenarios):
+## Project overview
 
-- **A-Mem** (`system: amem`): Xu et al., NeurIPS 2025. Every conversation turn is stored as a linked note, and new notes can rewrite old ones ("evolution"). We use the authors' code unchanged.
-- **RAG** (`system: rag`): stores raw turns and retrieves the top-k by embedding similarity. No LLM calls when storing, no links, no evolution. Same embedder, same answer prompts, same k as A-Mem, so the only difference is the memory.
-- **TSOM** (`system: tsom`): A-Mem plus an append-only temporal fact layer. Each write also extracts `(entity, attribute, value)` facts, classifies how each relates to what is already stored (`ADD`, `REAFFIRM`, `REPLACE`, `CORRECT`, `ADD_HISTORICAL`) and records supersession without ever deleting rows. Retrieval returns A-Mem's notes plus the facts behind them, marked `[CURRENT]` or `[PAST]`.
+TSOM (Time-Scoped Ontological Memory) is a memory layer for LLM agents that runs alongside an unchanged [A-Mem](https://github.com/WujiangXu/AgenticMemory) (Xu et al., NeurIPS 2025), the base paper. A-Mem stores conversation turns as linked notes, but it keeps the old and new values of a changed fact side by side and has no notion of when a fact stopped being true.
+
+TSOM adds an append-only store of `(entity, attribute, value)` facts extracted from every turn. An **update classifier** compares each new fact with what is already stored and decides whether to add it (`ADD`), reaffirm it (`REAFFIRM`), replace it (`REPLACE`), correct it (`CORRECT`) or keep it as history (`ADD_HISTORICAL`), retiring old values by status instead of deleting them. A **time-scoped retriever** then shows the agent the relevant facts labelled `[CURRENT]` or `[PAST]`, depending on whether the question is about now or an earlier period.
+
+"Ontological" only means the memory organises itself at run time, with no formal ontology or fixed schema.
+
+We evaluate TSOM against A-Mem and a RAG baseline on FactConsolidation (MemoryAgentBench), our own change scenarios and LoCoMo, all through one shared agent, tool interface and harness:
+
+- **A-Mem** (`system: amem`): the authors' code, unchanged. Every turn is stored as a linked note, and new notes can rewrite old ones ("evolution").
+- **RAG** (`system: rag`): raw turns, top-k retrieval by embedding similarity. No LLM calls on write, no links, no evolution. Same embedder, answer prompts and k as A-Mem.
+- **TSOM** (`system: tsom`): A-Mem plus the temporal fact layer. Retrieval returns A-Mem's notes plus the facts behind them, marked `[CURRENT]` or `[PAST]`.
+
+Headline results (Qwen2.5-3B, temperature 0; full numbers in [Gap-resolution table](#gap-resolution-table) and `results/phase2/`): TSOM cuts the stale-answer rate on FactConsolidation SH 6K from 65.8% to 41.9% and holds no contradictory active facts, but it does not improve our change scenarios or past-period questions, and each write costs about 3x more LLM calls than A-Mem's.
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    T["Conversation turn"] --> A["Agent<br/>agent/assistant.py"]
-    Q["Question"] --> A
-    A -->|"write_memory"| N["A-Mem notes, links and evolution<br/>third_party/amem via tsom/amem_bridge.py"]
-    A -->|"write_memory (tsom only)"| E["Fact extractor<br/>entity, attribute, value"]
-    E --> C["Update classifier (Gap 1)<br/>ADD, REAFFIRM, REPLACE, CORRECT, ADD_HISTORICAL<br/>switch: classifier_mode"]
-    C --> K["Consolidator<br/>append-only: retires facts, never deletes"]
-    N --> S[("SQLite store<br/>notes, facts, operation log")]
-    K --> S
-    A -->|"search_memory, get_fact_history"| R["Time-scoped retriever (Gap 3)<br/>notes plus facts marked CURRENT or PAST<br/>switch: time_scoped_retrieval"]
-    S --> R
-    R --> L["Answer LLM<br/>qwen2.5:3b through Ollama"]
-    L --> O["Answer, plus a trace of tools, context and memory operations"]
-```
+![TSOM architecture](docs/tsom-architecture.png)
 
-Every memory write logs its LLM calls, tokens and latency (`tsom/memory.py`); E6 and Gap 2 use these logs. RAG replaces both memory paths with raw turns and top-k retrieval.
+**Write path (left).** Every turn goes to A-Mem unchanged (note, link, evolve, into a versioned note store). With `system=tsom` the turn also enters the fact layer: *fact extraction*, *attribute stabilisation* (`tsom/temporal/attributes.py`), the *update classifier* (rules first, then the LLM; **Gap 1**, switch `classifier_mode`) and *consolidation* into the append-only fact store, which retires facts by status and never deletes them. Each fact keeps entity, attribute, value, status, validity start and end, links and the wording's tense.
+
+**Read path (right).** For a question, A-Mem returns its top-k notes (k = 10) and TSOM finds the entities named in the question. Candidate facts with full histories are pulled from the fact store, then the **time-scoped retriever** (**Gap 3**, switch `time_scoped_retrieval`) decides whether the question is about now (active facts only) or an earlier period (filter by date), ranks and caps the facts at 30, and labels them `[CURRENT]` / `[PAST]`. The agent's prompt contains the facts and the notes.
+
+Grey boxes are existing A-Mem components, green boxes are TSOM additions, and dashed boxes mark the two gaps. Every memory write logs its LLM calls, tokens and latency (`tsom/memory.py`); the efficiency results use these logs. RAG replaces both memory paths with raw turns and top-k retrieval.
 
 ## Repository layout
 
@@ -52,13 +52,11 @@ results/         phase2/ (final tables, figures, run summaries, trace samples), 
 tests/           offline tests, no model or GPU needed
 ```
 
-The course's suggested folders map onto ours: `src/` is `tsom/` and `agent/`, `experiments/` is `configs/` and `notebooks/colab_evaluation.ipynb`, `logs/` is `results/phase2/logs/` and `results/phase2/trace_excerpts/`, and `docs/` is `docs/`.
-
-## Running it
+## Installation
 
 ### Option 1: Google Colab (free GPU, recommended)
 
-Open `notebooks/colab_baseline.ipynb` in Colab, set the runtime to T4 GPU and run the cells. It installs Ollama, downloads `qwen2.5:3b`, runs the tests and the demo, then the baseline. Results are saved to Google Drive.
+Open `notebooks/colab_baseline.ipynb` (A-Mem baseline) or `notebooks/colab_evaluation.ipynb` (all experiments) in Colab and set the runtime to T4 GPU. They install Ollama, download `qwen2.5:3b`, set the context length, run the tests and then the runs. Results are saved to Google Drive.
 
 ### Option 2: your own machine
 
@@ -75,12 +73,14 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ollama pull qwen2.5:3b
 
-python -m pytest -q tests                                    # offline checks
+python -m pytest -q tests                                    # offline checks, no model needed
 python scripts/demo.py                                       # small two-session demo
 bash scripts/run_baseline.sh --set max_samples=1 max_questions=20   # quick test
 bash scripts/run_baseline.sh                                 # full A-Mem baseline, all 10 conversations
 bash scripts/run_baseline.sh --config configs/rag_qwen2.5-3b.json   # full RAG baseline
 ```
+
+## Running the system
 
 ### TSOM and FactConsolidation
 
@@ -194,7 +194,7 @@ If a run stops halfway, run the same command again. Finished conversations are s
 
 ## Reproducing the experiments
 
-`notebooks/colab_evaluation.ipynb` runs every experiment on a free Colab GPU and can split the work across several sessions (`WORKERS`, `WORKER`). Set `COMMIT` to the tagged commit so every session runs the same code. The exact command for every run is listed in `results/phase2/experiments.md`.
+`notebooks/colab_evaluation.ipynb` runs every experiment on a free Colab GPU and can split the work across several sessions (`WORKERS`, `WORKER`). Set `COMMIT` to the tagged commit so every session runs the same code. The exact command for every run (all three seeds, 6K and 32K) is listed in `results/phase2/experiments.md`; tables and figures are rebuilt with `harness/make_tables.py`, and the outputs land in `results/phase2/` (`tables.md`, `ablation.md`, `efficiency.md`, `failures.md`, `figures/`).
 
 | Experiment | Systems | Data |
 |---|---|---|
@@ -228,21 +228,27 @@ On LoCoMo we follow A-Mem's evaluation (all five question categories, F1 and BLE
 
 ## Gap-resolution table
 
-| Gap | Problem in A-Mem | Our component | Switch for ablation | Metric | Target set in the proposal | Result |
-|---|---|---|---|---|---|---|
-| 1. Contradictions held in memory | Old and new values of a changed fact stay side by side | Fact extractor, update classifier, append-only consolidator (`tsom/temporal/`) | `classifier_mode=append_only` | Active contradictions per 100 facts at each checkpoint; LoCoMo F1 | Lower than A-Mem at every checkpoint; LoCoMo F1 no worse | TODO |
-| 2. Write cost | Evolution runs on almost every write | None adopted. A conflict gate was tried on `feat/conflict-gated-evolution` and not merged; we report cost only | n/a | LLM calls, tokens, p50/p95 seconds per write | Fewer calls and lower latency than A-Mem | TODO |
-| 3. Outdated facts in answers | No notion of when a fact stopped being true | Time-scoped retriever with validity from session dates (`tsom/temporal/retriever.py`) | `time_scoped_retrieval=false` | Stale-answer rate on FactConsolidation; past-period correct; LoCoMo temporal F1 | Fewer stale answers than A-Mem; higher temporal F1 | TODO |
+| Gap (component) | Metric | A-Mem | TSOM | Addressed? |
+|---|---|---|---|---|
+| Gaps 1+3 (fact layer) | Stale rate, FC SH 6K | 65.8% | 41.9% | Yes |
+| Gaps 1+3 (fact layer) | Accuracy, change scenarios | 82.0% | 73.0% | No |
+| Gap 1 (classifier) | Contradictions /100 facts, SH 6K | 24.6† | 0.0 | Yes |
+| Gap 3 (retriever) | Past-period correct | 97.9% | 91.7% | No |
+| Write cost (secondary) | LLM calls per write, FC SH 6K | 2.91 | 9.70 | Measured only |
 
-Final numbers, tables, figures and trace samples are in `results/phase2/`. The development log is in `docs/devlog.md`.
+A-Mem is our reproduction under identical settings. † Same extracted facts with nothing retired.
 
-## Changes since Phase 1
+Gap 1 is the contradictions held in memory, Gap 2 is A-Mem's write cost (reported only, no mitigation adopted) and Gap 3 is outdated facts in answers. Switches for the ablation: `classifier_mode=append_only` (Gap 1 off) and `time_scoped_retrieval=false` (Gap 3 off). More detail: `results/phase2/gap_table.md`, `ablation.md`, `efficiency.md`, `failures.md`; the story behind each change is in `docs/devlog.md`.
 
-- Built the temporal fact layer (extractor, update classifier with three modes, append-only consolidator, time-scoped retriever) and the `get_fact_history` tool.
-- Added the FactConsolidation harness with stale-answer scoring, the active contradiction rate, change scenarios with past-period questions, extraction recall, and result tables with bootstrap confidence intervals.
-- Added repeatable runs (temperature and seed), the gap-wise ablation configs, and the Phase 2 evaluation notebook.
-- Gap 2 changed from a conflict gate to a cost measurement only. TODO: one line on why.
-- The MemGPT-style baseline promised in the proposal was not built. TODO: one line on why.
+Other final results (same settings): FactConsolidation SH 6K accuracy is 38.0% (RAG), 40.0% (A-Mem), 67.0% (TSOM); SH 32K 38.0%, 42.0%, 79.0%; LoCoMo F1 on conversations 1 and 8 is 25.9, 28.7, 28.8. The change-scenario shortfall is largely upstream: extraction recall is 45.5% (`results/phase2/runs/extraction/`), and 14.1% of TSOM's FactConsolidation answers ignored a correct `[CURRENT]` fact.
+
+## Changes since Phase 1 (final status)
+
+- **Built:** the temporal fact layer (extractor, update classifier with three modes, append-only consolidator, time-scoped retriever) and the `get_fact_history` tool. Added the FactConsolidation harness with stale-answer scoring, the active contradiction rate, change scenarios with past-period questions, extraction recall, result tables with bootstrap confidence intervals, repeatable runs (temperature and seed), the gap-wise ablation configs and the Phase 2 evaluation notebook.
+- **No MemGPT-style baseline.** The proposal promised one; it was dropped, so RAG is the only baseline besides A-Mem.
+- **No Gap 2 conflict gate.** The proposal planned conflict-gated evolution ("Gate (Gap 2)": if no fact is corrective or contradictory and no neighbour passes the similarity threshold tau, store the note with embedding links only and stop). It was prototyped on branch `feat/conflict-gated-evolution`, never merged and not run in Phase 2. Write cost is now a secondary measurement (LLM calls, tokens, p50/p95 latency per write) rather than a research gap, on our supervisor's advice. A-Mem's evolution runs unchanged.
+- **LoCoMo on conversations 1 and 8 only.** The proposal said we would use all of LoCoMo10; because of compute time we ran two of its ten conversations (`conversations=[1,8]`) as a no-harm check.
+- **Research questions: cost question reworded and moved.** The old RQ2 asked whether conflict-gated evolution reduces LLM calls and write latency compared with A-Mem. With the gate dropped, it became RQ3 and now asks how much extra cost (LLM calls, latency, prompt tokens) the fact layer adds. The validity-period question moved up from RQ3 to RQ2, so the two swapped places. RQ1 is only reworded (latest-value answers instead of contradictory active facts).
 
 ## Credits
 
