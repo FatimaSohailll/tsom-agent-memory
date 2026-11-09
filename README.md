@@ -47,7 +47,7 @@ configs/         one JSON file per run
 notebooks/       colab_evaluation.ipynb (all Phase 2 experiments), colab_baseline.ipynb (Phase 1 baseline)
 third_party/amem A-Mem's code, copied unchanged from a pinned commit (MIT)
 data/            locomo10.json (10 conversations, 1,986 questions), scenarios/ (change scenarios)
-docs/            devlog.md (development log)
+docs/            devlog.md (development log), tsom-architecture.png (architecture diagram)
 results/         phase2/ (final tables, figures, run summaries, trace samples), quick_test*/ (Phase 1)
 tests/           offline tests, no model or GPU needed
 ```
@@ -194,7 +194,7 @@ If a run stops halfway, run the same command again. Finished conversations are s
 
 ## Reproducing the experiments
 
-`notebooks/colab_evaluation.ipynb` runs every experiment on a free Colab GPU and can split the work across several sessions (`WORKERS`, `WORKER`). Set `COMMIT` to the tagged commit so every session runs the same code. The exact command for every run (all three seeds, 6K and 32K) is listed in `results/phase2/experiments.md`; tables and figures are rebuilt with `harness/make_tables.py`, and the outputs land in `results/phase2/` (`tables.md`, `ablation.md`, `efficiency.md`, `failures.md`, `figures/`).
+`notebooks/colab_evaluation.ipynb` runs every experiment on a free Colab or Kaggle T4 GPU and can split the work across several sessions (`WORKERS`, `WORKER`). Set `COMMIT` to the tagged commit so every session runs the same code. The results reported in `results/phase2/` and the paper were produced with code commit `9e1fc0e` (recorded in `results/phase2/setup_worker*.json`), run across four workers on Colab and Kaggle T4 GPUs. The exact command for every run (all three seeds, 6K and 32K) is listed in `results/phase2/experiments.md`; tables and figures are rebuilt with `harness/make_tables.py`, and the outputs land in `results/phase2/` (`tables.md`, `ablation.md`, `efficiency.md`, `failures.md`, `figures/`).
 
 | Experiment | Systems | Data |
 |---|---|---|
@@ -224,28 +224,28 @@ The stale-answer rate is the share of questions whose fact changed that got a wr
 
 The active contradiction rate (`harness/contradictions.py`) counts the keys (entity, attribute) holding two or more different active values, per 100 active facts, at each session checkpoint. FactConsolidation has no sessions, so each chunk is a checkpoint. A-Mem stores no facts, so each `tsom` run is compared with its own extracted facts counted as if nothing had been retired, which is what A-Mem keeps. It is computed from `memory_sample_<i>.sqlite`, so it needs no model calls. Attributes in `multivalued_attributes` are skipped. Other attributes can hold several true values on LoCoMo, so its rate is an upper bound. Facts stored under different attribute names are not compared.
 
-On LoCoMo we follow A-Mem's evaluation (all five question categories, F1 and BLEU-1, the same answer prompts and retrieval k, A-Mem's released code unchanged), but on conversations 1 and 8 rather than all 10, because of compute time. LoCoMo is used as a no-harm check, and our A-Mem numbers on those conversations can be compared with Table 1 of the A-Mem paper for the same model.
+On LoCoMo we follow A-Mem's evaluation (all five question categories, F1 and BLEU-1, the same answer prompts and retrieval k, A-Mem's released code unchanged), but on conversations 1 and 8 rather than all 10, because of compute time. LoCoMo is used as a no-harm check. Our A-Mem numbers are a reproduction with the released code under our settings and are not directly comparable with the published scores, which cover all ten conversations at a different temperature.
 
 ## Gap-resolution table
 
-| Gap (component) | Metric | A-Mem | TSOM | Addressed? |
+| Gap (component) | Metric | Base paper (A-Mem, reproduced) | Ours (TSOM) | Addressed? |
 |---|---|---|---|---|
-| Gaps 1+3 (fact layer) | Stale rate, FC SH 6K | 65.8% | 41.9% | Yes |
-| Gaps 1+3 (fact layer) | Accuracy, change scenarios | 82.0% | 73.0% | No |
-| Gap 1 (classifier) | Contradictions /100 facts, SH 6K | 24.6† | 0.0 | Yes |
-| Gap 3 (retriever) | Past-period correct | 97.9% | 91.7% | No |
+| Gaps 1+3 (fact layer) | Stale rate, FC SH 6K | 65.8% | 41.9% | Partially |
+| Gaps 1+3 (fact layer) | Accuracy, change scenarios | 82.0% | 73.0% | Not |
+| Gap 1 (classifier) | Contradictions /100 facts, SH 6K | 24.6† | 0.0 | Fully |
+| Gap 3 (retriever) | Past-period correct | 97.9% | 91.7% | Not |
 | Write cost (secondary) | LLM calls per write, FC SH 6K | 2.91 | 9.70 | Measured only |
 
 A-Mem is our reproduction under identical settings. † Same extracted facts with nothing retired.
 
-Gap 1 is the contradictions held in memory, Gap 2 is A-Mem's write cost (reported only, no mitigation adopted) and Gap 3 is outdated facts in answers. Switches for the ablation: `classifier_mode=append_only` (Gap 1 off) and `time_scoped_retrieval=false` (Gap 3 off). More detail: `results/phase2/gap_table.md`, `ablation.md`, `efficiency.md`, `failures.md`; the story behind each change is in `docs/devlog.md`.
+Gap 1 is the update mechanism (deciding whether a new value replaces, corrects or adds to the old one), Gap 3 is time scoping (validity periods and past-period questions), and Gap 2, A-Mem's write cost, is reported as a secondary measurement only. Switches for the ablation: `classifier_mode=append_only` (Gap 1 off) and `time_scoped_retrieval=false` (Gap 3 off). More detail: `results/phase2/gap_table.md`, `ablation.md`, `efficiency.md`, `failures.md`; the story behind each change is in `docs/devlog.md`.
 
 Other final results (same settings): FactConsolidation SH 6K accuracy is 38.0% (RAG), 40.0% (A-Mem), 67.0% (TSOM); SH 32K 38.0%, 42.0%, 79.0%; LoCoMo F1 on conversations 1 and 8 is 25.9, 28.7, 28.8. The change-scenario shortfall is largely upstream: extraction recall is 45.5% (`results/phase2/runs/extraction/`), and 14.1% of TSOM's FactConsolidation answers ignored a correct `[CURRENT]` fact.
 
 ## Changes since Phase 1 (final status)
 
 - **Built:** the temporal fact layer (extractor, update classifier with three modes, append-only consolidator, time-scoped retriever) and the `get_fact_history` tool. Added the FactConsolidation harness with stale-answer scoring, the active contradiction rate, change scenarios with past-period questions, extraction recall, result tables with bootstrap confidence intervals, repeatable runs (temperature and seed), the gap-wise ablation configs and the Phase 2 evaluation notebook.
-- **No MemGPT-style baseline.** The proposal promised one; it was dropped, so RAG is the only baseline besides A-Mem.
+- **No MemGPT-style baseline.** The proposal promised one; it was dropped because of time and compute limits, so RAG is the only baseline besides A-Mem.
 - **No Gap 2 conflict gate.** The proposal planned conflict-gated evolution ("Gate (Gap 2)": if no fact is corrective or contradictory and no neighbour passes the similarity threshold tau, store the note with embedding links only and stop). It was prototyped on branch `feat/conflict-gated-evolution`, never merged and not run in Phase 2. Write cost is now a secondary measurement (LLM calls, tokens, p50/p95 latency per write) rather than a research gap, on our supervisor's advice. A-Mem's evolution runs unchanged.
 - **LoCoMo on conversations 1 and 8 only.** The proposal said we would use all of LoCoMo10; because of compute time we ran two of its ten conversations (`conversations=[1,8]`) as a no-harm check.
 - **Research questions: cost question reworded and moved.** The old RQ2 asked whether conflict-gated evolution reduces LLM calls and write latency compared with A-Mem. With the gate dropped, it became RQ3 and now asks how much extra cost (LLM calls, latency, prompt tokens) the fact layer adds. The validity-period question moved up from RQ3 to RQ2, so the two swapped places. RQ1 is only reworded (latest-value answers instead of contradictory active facts).
